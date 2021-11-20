@@ -1,4 +1,5 @@
 # My Awesome configs
 
 - Terminal kitty
-- Broweser firefox
+
+![screenshot](./screenshot.png)
