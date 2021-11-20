@@ -1,5 +1,4 @@
-# Awesome wm
+# My Awesome configs
 
-![screenshot](./screenshot.png)
-
-power by <http://www.gitlab.com/dwt1>
+- Terminal kitty
+- Broweser firefox

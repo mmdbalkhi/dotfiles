@@ -27,7 +27,7 @@ local function factory(args)
     local timeout_forecast      = args.timeout or 60 * 60 * 24 -- 24 hrs
     local current_call          = args.current_call  or "curl -s 'http://api.openweathermap.org/data/2.5/weather?id=%s&units=%s&lang=%s&APPID=%s'"
     local forecast_call         = args.forecast_call or "curl -s 'http://api.openweathermap.org/data/2.5/forecast/daily?id=%s&units=%s&lang=%s&cnt=%s&APPID=%s'"
-    local city_id              	= 113646
+    local city_id              	= 113646 
     local units                 = args.units or "metric"
     local lang                  = args.lang or "en"
     local cnt                   = args.cnt or 5
