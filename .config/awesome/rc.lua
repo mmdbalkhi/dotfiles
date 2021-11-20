@@ -77,7 +77,6 @@ awful.spawn.with_shell(
 
 local themes = {
     "powerarrow",      -- 1
-    "powerarrow-dark", -- 2
 }
 
 local chosen_theme = theme[1]
