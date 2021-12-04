@@ -4,3 +4,6 @@
 [submodule ".config/awesome/lain"]
 	path = .config/awesome/lain
 	url = https://github.com/lcpz/lain
+[submodule ".config/awesome/themes"]
+	path = .config/awesome/themes
+	url = https://github.com/lcpz/awesome-copycats
