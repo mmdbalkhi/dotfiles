@@ -24,7 +24,8 @@ Plugin 'jiangmiao/auto-pairs'
 Plugin 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plugin 'junegunn/fzf.vim'
 Plugin 'preservim/nerdcommenter'
-Plugin 'wakatime/vim-wakatime'
+Plugin 'ryanoasis/vim-devicons'
+Plugin 'rust-lang/rust.vim'
 "add all your plugins here (note older versions of Vundle
 " used Bundle instead of Plugin)
 
@@ -33,10 +34,12 @@ Plugin 'wakatime/vim-wakatime'
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
+syntax enable
 
 "" persian
-set encoding=utf-8
+set encoding=UTF-8
 set termbidi
+
 " Enable folding
 set foldmethod=indent
 set foldlevel=99
@@ -74,6 +77,7 @@ set number
 set showmatch
 set history=1000
 set undolevels=1000
+
 ""set wildignore=*.swp,*.bak,*.pyc
 set visualbell
 set noerrorbells
@@ -86,7 +90,7 @@ if !exists('g:airline_symbols')
     let g:airline_symbols = {}
   endif
 
- " unicode symbols
+" unicode symbols
   let g:airline_left_sep = '»'
   let g:airline_left_sep = '▶'
   let g:airline_right_sep = '«'
@@ -97,16 +101,12 @@ if !exists('g:airline_symbols')
 
 let g:indentLine_setColors = 0
 let g:indentLine_defaultGroup = 'SpecialKey'
+
 " Vim
 let g:indentLine_color_term = 239
 let g:indentLine_char_list = ['|', '¦', '┆', '┊']
 let g:indentLine_concealcursor = 'inc'
 let g:indentLine_conceallevel = 2
-
-"call pylint
-""FileType python 
-:map <F10> :AsyncRun pylint ./%<CR><CR>
-:map <F12> :bw!<CR> "
 
 "nnoremap
 nnoremap <C-f> :Files<CR>
@@ -116,3 +116,37 @@ vmap ++ <plug>NERDCommenterToggle
 nmap ++ <plug>NERDCommenterToggle
 
 colorscheme desert 
+
+if v:lang =~ "utf8$" || v:lang =~ "UTF-8$"
+   set fileencodings=ucs-bom,utf-8,latin1
+endif
+
+set nocompatible	" Use Vim defaults (much better!)
+set bs=indent,eol,start		" allow backspacing over everything in insert mode
+
+"set ai			" always set autoindenting on
+"set backup		" keep a backup file
+set history=50		" keep 50 lines of command line history
+set ruler		" show the cursor position all the time
+
+" Only do this part when compiled with support for autocommands
+if has("autocmd")
+  augroup fedora
+  autocmd!
+  " In text files, always limit the width of text to 78 characters
+  " autocmd BufRead *.txt set tw=78
+  " When editing a file, always jump to the last cursor position
+  autocmd BufReadPost *
+  \ if line("'\"") > 0 && line ("'\"") <= line("$") |
+  \   exe "normal! g'\"" |
+  \ endif
+  " don't write swapfile on most commonly used directories for NFS mounts or USB sticks
+  autocmd BufNewFile,BufReadPre /media/*,/run/media/*,/mnt/* set directory=~/tmp,/var/tmp,/tmp
+  " start with spec file template
+  autocmd BufNewFile *.spec 0r /usr/share/vim/vimfiles/template.spec
+  augroup END
+endif
+
+
+filetype plugin on
+
