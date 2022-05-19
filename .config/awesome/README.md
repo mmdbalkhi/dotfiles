@@ -207,7 +207,7 @@ local cpu = lain.widget.cpu({
     end
 })
 
---[[ Coretemp (lm_sensors, per core)
+-- Coretemp (lm_sensors, per core)
 local tempwidget = awful.widget.watch({awful.util.shell, '-c', 'sensors | grep Core'}, 30,
 function(widget, stdout)
     local temps = ""
@@ -411,7 +411,7 @@ function theme.at_screen_connect(s)
             arrow("#4C5B83", "#676A99"),
             wibox.container.background(wibox.container.margin(wibox.widget { cpuicon, cpu.widget, layout = wibox.layout.align.horizontal }, 3, 4), "#676A99"),
             arrow("#676A99", "#9A6D9E"),
-            wibox.container.background(wibox.container.margin(wibox.widget { tempicon, temp.widget, layout = wibox.layout.align.horizontal }, 4, 4), "#9A6D9E"),
+            wibox.container.background(wibox.container.margin(wibox.widget { tempicon, tempwidget, layout = wibox.layout.align.horizontal }, 4, 4), "#9A6D9E"),
             arrow("#9A6D9E", "#AB7696"),
             wibox.container.background(wibox.container.margin(wibox.widget { weathericon, theme.weather.widget, layout = wibox.layout.align.horizontal }, 3, 3), "#AB7696"),
             arrow("#AB7696", "#B87B9D"),
@@ -425,7 +425,13 @@ function theme.at_screen_connect(s)
     }
 end
 
+-- Transparency for the terminal
+awful.rules.rules = { rule = { class = "x-terminal-emulator" },
+        properties = { opacity = 0.75 } },
+        awful.util.spawn("compton")
+
 return theme
+
 ```
 
 screenshot

@@ -806,8 +806,7 @@ client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_n
 autorun = true
 autorunApps = 
 { 
-   "setxkbmap -option grp:switch,grp_led:scroll,grp:alt_shift_toggle us,ir",
-   "copyq"
+    "feh --bg-fill $HOME/.wallpaper/1.jpg"
 }
 if autorun then
    for app = 1, #autorunApps do
