@@ -1,3 +1,13 @@
 # dotfiles
 
-- [awesome](.config/awesome)
+## wm
+
+* [awesome](.config/awesome/)
+
+## apps
+
+* [kitty](.config/kitty/)
+
+## other
+
+* [wallpaper](.wallpaper/)
