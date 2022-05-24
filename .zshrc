@@ -165,7 +165,7 @@ alias open='xdg-open'
 
 # kitty
 
-if [ -b `which kitty` ]; then
+if [ -f `which kitty` ]; then
   
   ## show img in terminal
   alias icat="kitty +kitten icat"
