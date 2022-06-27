@@ -1,3 +1,5 @@
+-- {{{ Required libraries
+
 -- If LuaRocks is installed, make sure that packages installed through it are
 -- found (e.g. lgi). If LuaRocks is not installed, do nothing.
 pcall(require, "luarocks.loader")
@@ -88,40 +90,41 @@ local themes = {
     "vertex"           -- 10
 }
 
-local chosen_theme = theme[6]
+local chosen_theme = themes[6]
 local modkey       = "Mod4"
 local altkey       = "Mod1"
 local terminal     = "kitty"
 local vi_focus     = false -- vi-like client focus https://github.com/lcpz/awesome-copycats/issues/275
 local cycle_prev   = true  -- cycle with only the previously focused client or all https://github.com/lcpz/awesome-copycats/issues/274
-local editor       = os.getenv("EDITOR") or "vim"
+local editor       = os.getenv("EDITOR") or "code"
 local browser      = "firefox"
+local filemanager  = "dolphin"
 
 awful.util.terminal = terminal
-awful.util.tagnames = { "1", "2", "3", "4", "5" }
+awful.util.tagnames = { "edit", "trm", "dev", "web", "vid", "msg", "tmp" ,"BG" }
 awful.layout.layouts = {
     awful.layout.suit.floating,
     awful.layout.suit.tile,
-    awful.layout.suit.tile.left,
+    -- awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
     awful.layout.suit.tile.top,
-    --awful.layout.suit.fair,
-    --awful.layout.suit.fair.horizontal,
-    --awful.layout.suit.spiral,
-    --awful.layout.suit.spiral.dwindle,
-    --awful.layout.suit.max,
-    --awful.layout.suit.max.fullscreen,
-    --awful.layout.suit.magnifier,
-    --awful.layout.suit.corner.nw,
-    --awful.layout.suit.corner.ne,
-    --awful.layout.suit.corner.sw,
-    --awful.layout.suit.corner.se,
-    --lain.layout.cascade,
-    --lain.layout.cascade.tile,
-    --lain.layout.centerwork,
-    --lain.layout.centerwork.horizontal,
-    --lain.layout.termfair,
-    --lain.layout.termfair.center
+    awful.layout.suit.fair,
+    awful.layout.suit.fair.horizontal,
+    -- awful.layout.suit.spiral,
+    awful.layout.suit.spiral.dwindle,
+    -- awful.layout.suit.max,
+    -- awful.layout.suit.max.fullscreen,
+    awful.layout.suit.magnifier,
+    -- awful.layout.suit.corner.nw,
+    awful.layout.suit.corner.ne,
+    -- awful.layout.suit.corner.sw,
+    -- awful.layout.suit.corner.se,
+    lain.layout.cascade,
+    lain.layout.cascade.tile,
+    lain.layout.centerwork,
+    -- lain.layout.centerwork.horizontal,
+    lain.layout.termfair,
+    lain.layout.termfair.center
 }
 
 lain.layout.termfair.nmaster           = 3
@@ -162,11 +165,12 @@ awful.util.tasklist_buttons = mytable.join(
      awful.button({ }, 5, function() awful.client.focus.byidx(-1) end)
 )
 
-beautiful.init(string.format("%s/.config/awesome/themes/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme))
+-- Theme config
+beautiful.init(string.format("%s/.config/awesome/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme))
 
 -- }}}
 
--- {{{ Menu
+-- {{{ start FreeDeskop :: menu
 
 -- Create a launcher widget and a main menu
 local myawesomemenu = {
@@ -187,29 +191,7 @@ awful.util.mymainmenu = freedesktop.menu.build {
         -- other triads can be put here
     }
 }
-
--- Hide the menu when the mouse leaves it
---[[
-awful.util.mymainmenu.wibox:connect_signal("mouse::leave", function()
-    if not awful.util.mymainmenu.active_child or
-       (awful.util.mymainmenu.wibox ~= mouse.current_wibox and
-       awful.util.mymainmenu.active_child.wibox ~= mouse.current_wibox) then
-        awful.util.mymainmenu:hide()
-    else
-        awful.util.mymainmenu.active_child.wibox:connect_signal("mouse::leave",
-        function()
-            if awful.util.mymainmenu.wibox ~= mouse.current_wibox then
-                awful.util.mymainmenu:hide()
-            end
-        end)
-    end
-end)
---]]
-
--- Set the Menubar terminal for applications that require it
---menubar.utils.terminal = terminal
-
--- }}}
+-- }}} end FreeDeskop :: menu
 
 -- {{{ Screen
 
@@ -435,31 +417,31 @@ globalkeys = mytable.join(
               {description = "-10%", group = "hotkeys"}),
 
     -- ALSA volume control
-    awful.key({ modkey }, "Up",
+    awful.key({ altkey }, "Up",
         function ()
             os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
             beautiful.volume.update()
         end,
         {description = "volume up", group = "hotkeys"}),
-    awful.key({ modkey }, "Down",
+    awful.key({ altkey }, "Down",
         function ()
             os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
             beautiful.volume.update()
         end,
         {description = "volume down", group = "hotkeys"}),
-    awful.key({ modkey }, "m",
+    awful.key({ altkey }, "m",
         function ()
             os.execute(string.format("amixer -q set %s toggle", beautiful.volume.togglechannel or beautiful.volume.channel))
             beautiful.volume.update()
         end,
         {description = "toggle mute", group = "hotkeys"}),
-    awful.key({ modkey, "Control" }, "m",
+    awful.key({ altkey, "Control" }, "m",
         function ()
             os.execute(string.format("amixer -q set %s 100%%", beautiful.volume.channel))
             beautiful.volume.update()
         end,
         {description = "volume 100%", group = "hotkeys"}),
-    awful.key({ modkey, "Control" }, "0",
+    awful.key({ altkey, "Control" }, "0",
         function ()
             os.execute(string.format("amixer -q set %s 0%%", beautiful.volume.channel))
             beautiful.volume.update()
@@ -512,9 +494,13 @@ globalkeys = mytable.join(
     awful.key({ modkey }, "v", function () awful.spawn.with_shell("xsel -b | xsel") end,
               {description = "copy gtk to terminal", group = "hotkeys"}),
 
-    -- User programs
+    -- browser
     awful.key({ modkey }, "q", function () awful.spawn(browser) end,
               {description = "run browser", group = "launcher"}),
+
+    -- filemanager
+    awful.key({ modkey }, "e", function () awful.spawn(filemanager) end,
+    {description = "run file manager", group = "launcher"}),
 
     -- Default
     --[[ Menubar
@@ -530,14 +516,14 @@ globalkeys = mytable.join(
     --]]
     -- alternatively use rofi, a dmenu-like application with more features
     -- check https://github.com/DaveDavenport/rofi for more details
-    --[[ rofi
-    awful.key({ modkey }, "x", function ()
+    -- rofi
+    awful.key({ modkey }, "r", function ()
             os.execute(string.format("rofi -show %s -theme %s",
             'run', 'dmenu'))
         end,
-        {description = "show rofi", group = "launcher"}),
+        {description = "show rofi", group = "launcher"})
     --]]
-    -- Prompt
+    --[[ Prompt
     awful.key({ modkey }, "r", function () awful.screen.focused().mypromptbox:run() end,
               {description = "run prompt", group = "launcher"}),
 
@@ -746,6 +732,7 @@ client.connect_signal("manage", function (c)
     end
 end)
 
+-- [[
 -- Add a titlebar if titlebars_enabled is set to true in the rules.
 client.connect_signal("request::titlebars", function(c)
     -- Custom
@@ -791,7 +778,7 @@ client.connect_signal("request::titlebars", function(c)
         },
         layout = wibox.layout.align.horizontal
     }
-end)
+end) --]]
 
 -- Enable sloppy focus, so that focus follows mouse.
 client.connect_signal("mouse::enter", function(c)
@@ -802,17 +789,16 @@ client.connect_signal("focus", function(c) c.border_color = beautiful.border_foc
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 
 -- }}}
--- Autorun programs
+
+--{{{ Autorun programs
 autorun = true
 autorunApps = 
 { 
-    "feh --bg-fill $HOME/.wallpaper/1.jpg"
+   "copyq",
 }
 if autorun then
    for app = 1, #autorunApps do
        awful.util.spawn(autorunApps[app])
    end
 end
-
-
 
