@@ -1,0 +1,86 @@
+# NOTE: this example targets the master branch of i3status-rust.
+#
+# For latest stable version, refer to
+# https://github.com/greshake/i3status-rust/blob/v0.22.0/examples/config.toml
+
+icons_format = "{icon}"
+
+[theme]
+theme = "solarized-dark"
+[theme.overrides]
+idle_bg = "#123456"
+idle_fg = "#abcdef"
+
+[icons]
+icons = "awesome"
+[icons.overrides]
+bat = " | | "
+bat_full = " |X| "
+bat_charging = " |^| "
+bat_discharging = " |v| "
+
+[[block]]
+block = "disk_space"
+path = "/"
+info_type = "available"
+alert_unit = "GB"
+interval = 20
+warning = 20.0
+alert = 10.0
+format = " $icon root: $available.eng(2) "
+
+[[block]]
+block = "disk_space"
+path = "/home/mmdbalkhi/"
+info_type = "available"
+alert_unit = "GB"
+interval = 20
+warning = 20.0
+alert = 10.0
+format = " $icon home: $available.eng(2) "
+
+[[block]]
+block = "cpu"
+
+[[block]]
+block = "temperature"
+interval = 10
+chip = "*-isa-*"
+
+[[block]]
+block = "memory"
+format = " $icon $mem_used_percents.eng(1) "
+format_alt = " $icon_swap $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
+interval = 30
+warning_mem = 70
+critical_mem = 90
+
+[[block]]
+block = "github"
+token = "..."
+format = " $icon $total.eng(1) "
+info = ["total"]
+warning = ["mention","review_requested"]
+hide_if_total_is_zero = true
+
+[[block]]
+block = "weather"
+format = "$icon $weather $temp"
+[block.service]
+name = "openweathermap"
+api_key = "3e321f9414eaedbfab34983bda77a66e" # awesome lains default api_key
+city_id = "113646" # Tabriz, Iran city_id
+units = "metric"
+
+[[block]]
+block = "sound"
+[[block.click]]
+button = "left"
+cmd = "pavucontrol"
+
+[[block]]
+block = "time"
+interval = 5
+[block.format]
+full = " $icon %d/%m %R "
+short = " $icon %R "
