@@ -40,6 +40,15 @@ alert = 10.0
 format = " $icon home: $available.eng(2) "
 
 [[block]]
+block = "memory"
+format = " $icon $mem_used_percents.eng(1) "
+format_alt = " $icon_swap $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
+interval = 30
+warning_mem = 70
+critical_mem = 90
+
+
+[[block]]
 block = "cpu"
 
 [[block]]
@@ -48,20 +57,7 @@ interval = 10
 chip = "*-isa-*"
 
 [[block]]
-block = "memory"
-format = " $icon $mem_used_percents.eng(1) "
-format_alt = " $icon_swap $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
-interval = 30
-warning_mem = 70
-critical_mem = 90
-
-[[block]]
-block = "github"
-token = "..."
-format = " $icon $total.eng(1) "
-info = ["total"]
-warning = ["mention","review_requested"]
-hide_if_total_is_zero = true
+block = "net"
 
 [[block]]
 block = "weather"
@@ -78,9 +74,11 @@ block = "sound"
 button = "left"
 cmd = "pavucontrol"
 
+
+
 [[block]]
 block = "time"
 interval = 5
 [block.format]
-full = " $icon %d/%m %R "
+full = " $icon %m/%d %R "
 short = " $icon %R "

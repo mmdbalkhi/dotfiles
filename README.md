@@ -3,6 +3,7 @@
 ## wm
 
 * [awesome](.config/awesome/)
+* [sway](.config/sway/)
 
 ## apps
 

@@ -1,0 +1,59 @@
+#+title: SwayWM
+#+author: Komeil Parseh
+#+date: <2023-04-07 Fri>
+#+description: about install and run swayWM in Arch Linux.
+
+
+
+* About install and run SwayWM in Arch Linux
+[[../screenshots/sway.jpeg]]
+** Introduction
+Sway is an i3-compatible Wayland compositor. Actually, sway includes all of i3's
+features but in Wayland.
+    Wayland is a display server protocol like x11, but more it's secure and faster.
+
+** Installing
+Run this command to install wayland and sway in your arch machine:
+    #+begin_example
+    sudo pacman -S wayland sway
+    #+end_example
+Now you have wayland and sway, but still, you need to install other dep
+endencies! This rice depended on some apps and tools like:
+- [[https://github.com/greshake/i3status-rust][i3status-rs]]: bar
+- [[https://github.com/davatorium/rofi][rofi]]: appliction launcher
+- [[https://github.com/kovidgoyal/kitty][kitty]]: terminal
+- [[https://www.mozilla.org/en-US/firefox/][firefox]]: browser
+- [[https://github.com/nwg-piotr/azote][azote]]: wallpaper manger
+- [[https://github.com/bugaevc/wl-clipboard][wl-clipboard]]: cli copy/paste
+- [[https://github.com/yory8/clipman][clipman]]: clipboard manger
+- [[https://wayland.emersion.fr/slurp/][slurp]]: region selection
+- [[https://sr.ht/~emersion/grim/][grim]]: screenshot tools
+- [[https://github.com/alebastr/sway-systemd][sway-systemd]]: Systemd integration
+
+Installing some of these apps and tools is a bit painful! A few of these packages are
+not in Arch repositories, but you can install these from aur or source.
+*** Installing from Arch repo:
+    #+begin_example
+    sudo pacman -S rofi kitty firefox clipman slurp grim
+    #+end_example
+*** Installing others via [[ https://github.com/morganamilo/paru][paru]]:
+    #+begin_example
+    paru -S azote wl-clipboard sway-systemd
+    #+end_example
+Now everything is Ok, and you can go to the next step.
+** Configuration:
+For configuration of sway, just copy =.config/sway= directory into your =$HOME=:
+    #+begin_example
+    cp -rv .config/sway ~/.config/sway
+    #+end_example
+*** i3status-rs
+If you want to use i3status-rs, copy =.config/i3status-rs= directory into your =$HOME=:
+    #+begin_example
+    cp -rv .config/sway ~/.config/sway
+    #+end_example
+** Run:
+If you want to run sway, you can use a DM or run below command on the =TTY=:
+    #+begin_example
+    XDG_SESSION_TYPE=wayland dbus-run-session sway
+    #+end_example
+Enjoye it!
