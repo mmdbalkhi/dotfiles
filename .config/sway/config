@@ -30,8 +30,7 @@ set $i3statusrs_config ~/.config/i3status-rs/config.toml
 
 # Your Second language iso name. If you havn't this, leave this blank
 # seting second language for persian(ir):
-# set $second_lang ir
-set $second_lang
+set $second_lang ir
 
 ### Output configuration
 #
@@ -254,9 +253,13 @@ bindsym $mod+r mode "resize"
 
 bindsym $altkey+Up exec pactl set-sink-volume @DEFAULT_SINK@ +2%
 bindsym $altkey+Down exec pactl set-sink-volume @DEFAULT_SINK@ -2%
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5%
 bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
 bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
-
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
 
 #
 # clipboard manger
@@ -264,13 +267,17 @@ bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
 exec wl-paste -t text --watch clipman store --max-items=60 --histpath="~/.local/share/clipman.json"
 bindsym $mod+Shift+v exec clipman pick --tool="wofi" --max-items=30 --histpath="~/.local/share/clipman.json"
 
-
+#
+# colour picker
+#
+bindsym $mod+Shift+z exec wl-color-picker
 # Screenshot bindkeys
 # path: $HOME/Pictures/Screenshots/
 #
 
 bindsym Print exec grim -g "$(slurp)" - | wl-copy
-bindsym $mod+Print exec grim ~/Pictures/Screenshots/$(date +'%F%R_grim.png')
+bindsym $altkey+Print exec grim | wl-copy
+bindsym $mod+Print exec grim ~/Pictures/ScreenShots/$(date +'%F%R_grim.png')
 
 # Custom bindkeys
 # https://wiki.archlinux.org/title/Sway#Control_swaynag_with_the_keyboard
@@ -297,6 +304,29 @@ mode "nag" {
   }
 }
 
+
+for_window [window_role = "pop-up"] floating enable
+for_window [window_role = "bubble"] floating enable
+for_window [window_role = "dialog"] floating enable
+for_window [window_type = "dialog"] floating enable
+for_window [window_role = "task_dialog"] floating enable
+for_window [window_type = "menu"] floating enable
+for_window [app_id = "floating"] floating enable
+for_window [app_id = "floating_update"] floating enable, resize set width 1000px height 600px
+for_window [class = "(?i)pinentry"] floating enable
+for_window [title = "Administrator privileges required"] floating enable
+for_window [window_role = "pop-up"] floating enable
+for_window [window_role = "bubble"] floating enable
+for_window [window_role = "dialog"] floating enable
+for_window [window_type = "dialog"] floating enable
+for_window [window_role = "task_dialog"] floating enable
+for_window [window_type = "menu"] floating enable
+for_window [app_id = "floating"] floating enable
+for_window [app_id = "floating_update"] floating enable, resize set width 1000px height 600px
+for_window [class = "(?i)pinentry"] floating enable
+for_window [title = "Administrator privileges required"] floating enable
+for_window [title = "Firefox - Sharing Indicator"] kill
+for_window [title = "Firefox — Sharing Indicator"] kill
 ### Status Bar:
 #
 # Read `man 5 sway-bar` for more information about this section.
@@ -336,18 +366,23 @@ bar {
     default_floating_border pixel
 
 #
-# disable xwayland
 # for more information, see https://wiki.archlinux.org/title/Wayland#XWayland
 # Note: Nvidia drivers prior to version 470 (e.g. nvidia-390xx-dkmsAUR) do not
 # support hardware accelerated XWayland, causing non-Wayland-native applications
 # to suffer from poor performance in Wayland sessions.
 #
 # xwayland disable
+exec pipewire
+exec pipewire-pulse
+
+#exec pulseaudio --daemonize=no --exit-idle-time=-1
+
+exec mako  
 
 # Manage Sway-specific daemons with systemd
 # https://wiki.archlinux.org/title/Sway#Manage_Sway-specific_daemons_with_systemd
 # 
-exec_always "systemctl --user import-environment; systemctl --user start sway-session.target"
-
+#exec_always "systemctl --user import-environment; systemctl --user start sway-session.target"
+include ~/.config/sway/catppuccin-mocha 
 include /etc/sway/config.d/*
- 
+
