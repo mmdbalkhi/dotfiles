@@ -62,7 +62,7 @@ exec swayidle -w \
 # 
 
 ### Lockscreen 
-bindsym $mod+Shift+p exec swaylock
+bindsym $mod+Shift+p exec swaylock 
 
 ### Input configuration
 #
@@ -104,11 +104,11 @@ input <identifier> xkb_model "pc101"
 #
 # delay & rate
 #
-    # 300s repeat delay
-    input <identifier> repeat_delay 300
+# 300s repeat delay
+input <identifier> repeat_delay 300
 
-    # 30s repeat rate
-    input <identifier> repeat_rate 30
+# 30s repeat rate
+input <identifier> repeat_rate 30
 
 ### Key bindings
 #
@@ -361,7 +361,7 @@ bar {
     #    with border thickness 2.
     #
     default_border pixel
-    
+
     # default_floating_border normal|none|pixel
     #        set default border style for new floating windows. This only applies to windows that are
     #     spawned in floating mode, not windows that become floating afterwards.
@@ -375,17 +375,38 @@ bar {
 # to suffer from poor performance in Wayland sessions.
 #
 # xwayland disable
+
+### Audio
+#
+# for setup pipewire with alsa, see https://docs.voidlinux.org/config/media/pipewire.html
+# Note: you can use pulseaudio instead of pipewire, for more information, see
+# https://docs.voidlinux.org/config/media/pulseaudio.html
+#
+
+# pipewire startup
 exec pipewire
 exec pipewire-pulse
 
+# pulseaudio startyp
 #exec pulseaudio --daemonize=no --exit-idle-time=-1
+
+
+### Notification daemon
+#
+# Mako is a lightweight Wayland notification daemon
+# Mako is direct and easy to use, so I use it if you  want to use
+# another notification-daemon, see https://wiki.archlinux.org/title/Desktop_notifications
+#
 
 exec mako  
 
+#
 # Manage Sway-specific daemons with systemd
 # https://wiki.archlinux.org/title/Sway#Manage_Sway-specific_daemons_with_systemd
 # 
+
 #exec_always "systemctl --user import-environment; systemctl --user start sway-session.target"
+
 include ~/.config/sway/catppuccin-mocha 
 include /etc/sway/config.d/*
 

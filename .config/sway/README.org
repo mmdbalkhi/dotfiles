@@ -5,8 +5,12 @@
 
 
 
+
 * About install and run SwayWM in Arch Linux
 [[../../screenshots/sway.jpeg]]
+#+begin_quote
+THIS ARTICLE IS OBSOLETE AND IN THE FUTURE WILL UPDATE FOR VOID LINUX
+#+end_quote
 ** Introduction
 Sway is an i3-compatible Wayland compositor. Actually, sway includes all of i3's
 features but in Wayland.

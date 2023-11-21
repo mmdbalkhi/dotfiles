@@ -30,8 +30,17 @@ text-caps-lock-color=f8f8f2
 
 # Size
 indicator-radius=100
-indicator-thickness=30
+indicator-thickness=7
 
+# clock
+clock
+
+# bg
+effect-blur=12x12
+effect-vignette=0.5:0.5
+image=~/w/dotfiles/.wallpaper/komi.jpg
+
+ 
 # Flags
 daemonize
 #ignore-empty-password
@@ -39,4 +48,4 @@ indicator-caps-lock
 show-failed-attempts
 show-keyboard-layout
 indicator-idle-visible
-image=~/w/dotfiles/.wallpaper/komi.png 
+
