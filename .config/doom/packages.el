@@ -49,6 +49,10 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
 
-(package! elcord)
 (package! magit)
-(package! eaf)
+(package! gnuplot)
+(package! undo-tree)
+(package! rainbow-delimiters)
+(package! multiple-cursors)
+(package! org-roam)
+

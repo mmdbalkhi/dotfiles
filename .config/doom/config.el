@@ -40,10 +40,8 @@
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
+(setq org-directory "~/Documents/org")
 
-
-;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
 ;;
 ;;   (after! PACKAGE
@@ -75,20 +73,82 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
-(set-email-account!
- "gmail"
- '((mu4e-sent-folder       . "/[Gmail]/Sent Mail")
-   (mu4e-trash-folder      . "/[Gmail]/Bin")
-   (smtpmail-smtp-user     . "ahmdparsh129@gmail.com"))
- t)
+(setq doom-irc-servers '("irc.freenode.net" "irc.oftc.net" "irc.libera.chat"))
+(setq doom-irc-nick "mmdbalkhi")
 
-(setq mu4e-get-mail-command "mbsync gmail"
-      ;; get emails and index every 5 minutes
-      mu4e-update-interval 300
-	  ;; send emails with format=flowed
-	  mu4e-compose-format-flowed t
-	  ;; no need to run cleanup after indexing for gmail
-	  mu4e-index-cleanup nil
-	  mu4e-index-lazy-check t
-      ;; more sensible date format
-      mu4e-headers-date-format "%d.%m.%y")
+(setq url-gateway-method 'socks)
+(setq socks-server '("Default server" "127.0.0.1" 8086 5))
+
+(setenv "ALL_PROXY" "socks5://127.0.0.1:8086")
+(setenv "all_proxy" "socks5://127.0.0.1:8086")
+
+(use-package minimap
+  :ensure t
+  :config
+  (add-hook 'prog-mode-hook #'minimap-mode)
+)
+
+;; 
+(global-undo-tree-mode)
+
+;; rainbow
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+
+;; modeline height
+(setq doom-modeline-height 25)
+
+;; multiple-cursors
+(global-set-key (kbd "C-c m c") 'mc/edit-lines)
+
+(use-package! org-roam
+  :custom
+  (org-roam-directory "~/Documents/org")
+  :config
+  (org-roam-db-autosync-mode))
+
+(setq lsp-ui-doc-enable t
+      lsp-ui-doc-show-with-cursor t
+      lsp-ui-sideline-show-code-actions t)
+
+
+(setq display-line-numbers-type 'relative) ; یا 't برای شماره خطوط مطلق
+(global-display-line-numbers-mode t)
+
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (setq tab-width 8)               ; عرض هر تب ۸ اسپیس
+            (setq c-basic-offset 8)          ; تنظیم تورفتگی به ۸ اسپیس
+            (setq indent-tabs-mode nil)))    ; استفاده از اسپیس به جای تب
+
+(add-hook 'python-mode-hook
+          (lambda ()
+            (setq tab-width 4)
+            (setq indent-tabs-mode nil))) ; استفاده از اسپیس به جای تب
+
+(use-package lsp-mode
+  :ensure t
+  :hook ((c-mode . lsp)
+         (c++-mode . lsp))
+  :commands lsp
+  :config
+  (setq lsp-enable-snippet t              ;; فعال کردن تکه‌های کد (snippets)
+        lsp-enable-file-watchers t        ;; فعال کردن نظارت بر تغییرات فایل
+        lsp-idle-delay 0.500              ;; تاخیر برای واکنش‌دهی LSP
+        lsp-signature-auto-activate t))    ;; فعال کردن امضای خودکار توابع
+
+(use-package company-lsp
+  :ensure t
+  :after (lsp-mode company)
+  :config
+  (push 'company-lsp company-backends))   ;; استفاده از شرکت (company) برای تکمیل خودکار
+
+(setq lsp-hover-enable t) ; فعال کردن نمایش مستندات
+
+(use-package lsp-ui
+  :ensure t
+  :after lsp-mode
+  :config
+  (setq lsp-ui-sideline-enable t        ;; فعال کردن نوار کنار کد برای نمایش خطاها
+        lsp-ui-doc-enable t             ;; فعال کردن نمایش مستندات به‌صورت پاپ‌آپ
+        lsp-ui-doc-position 'at-point)) ;; نمایش مستندات در مکان موس
+
