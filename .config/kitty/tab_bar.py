@@ -91,7 +91,10 @@ def currently_playing():
     status = " "
     data = {}
     try:
-        data = json.loads(subprocess.getoutput("get_song"))
+        data = json.loads(subprocess.getoutput("get_song")
+        import tempfile
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write(str(data))
     except ValueError:
         pass
     if data:
