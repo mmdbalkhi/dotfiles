@@ -126,7 +126,7 @@ up () {
 pdownload(){
     while IFS= read -r line; do
         printf '%s\n' "$line"
-        aria2c $line
+        aria2c $line -x 12
     done < $1
 }
 
@@ -193,7 +193,7 @@ torrentdl(){
 
 ## root privileges
 alias doas="doas --"
-alias please="sudo -p '[please] Sir, Could You Please Enter Your password:'"
+alias sudo="sudo -p '[SUDO] Sir, Could You Please Enter Your password:' "
 
 ## vim
 alias vi=vim
@@ -246,6 +246,8 @@ fi
 
 # youtube-dl
 
+alias yt-dlp="yt-dlp --proxy=socks5://127.0.0.1:8086"
+alias youtube-dl="yt-dlp"
 alias yta-aac="youtube-dl --extract-audio --audio-format aac "
 alias yta-best="youtube-dl --extract-audio --audio-format best "
 alias yta-flac="youtube-dl --extract-audio --audio-format flac "
@@ -262,8 +264,16 @@ alias tobash="sudo chsh $USER -s /bin/bash && echo 'Now log out.'"
 alias tozsh="sudo chsh $USER -s /bin/zsh && echo 'Now log out.'"
 alias tofish="sudo chsh $USER -s /bin/fish && echo 'Now log out.'"
 
+# xbps
+alias update="xbps-install -Su"
+
+# batman
+#
+alias man="batman"
+
 ## use fzf plugin
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
 
 ## plugins
 plugins=(git zsh-syntax-highlighting zsh-z)
@@ -283,3 +293,7 @@ for _plugin in $plugins; do
 done
 
 export GPG_TTY=$(tty)
+
+# fortune
+[ -x /usr/bin/fortune ] && /usr/bin/fortune void
+

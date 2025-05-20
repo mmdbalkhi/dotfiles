@@ -14,11 +14,11 @@ set $right l
 # Your preferred web browser
 set $browser MOZ_ENABLE_WAYLAND=1 firefox
 # Your preferred terminal emulator
-set $term kitty
+set $term st
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
-set $menu rofi -show run | dmenu | xargs swaymsg exec --
+set $menu dmenu_run | xargs swaymsg exec --
 
 # i3status-rs config path 
 set $i3statusrs_config ~/.config/i3status-rs/config.toml
@@ -60,7 +60,7 @@ exec swayidle -w \
 # 
 
 ### Lockscreen 
-#bindsym Mod4+Shift+p exec swaylock 
+bindsym Mod4+Shift+p exec swaylock 
 
 ### Input configuration
 #
@@ -89,6 +89,15 @@ input * {
     
     # keyboard options
     xkb_options "grp:switch,grp_led:scroll,grp:alt_shift_toggle"
+
+    xkb_model "pc105"
+    #
+    # delay & rate
+    #
+    # 300s repeat delay
+    repeat_delay 300
+    # 30s repeat rate
+    repeat_rate 30
 }
 
 # enable Initially enable CapsLock/NumLock
@@ -96,17 +105,6 @@ input * {
 
 # input type:keyboard xkb_capslock enabled
 input type:keyboard xkb_numlock enabled
-
-input <identifier> xkb_model "pc101"
-
-#
-# delay & rate
-#
-# 300s repeat delay
-input <identifier> repeat_delay 300
-
-# 30s repeat rate
-input <identifier> repeat_rate 30
 
 ### Key bindings
 #
@@ -265,7 +263,7 @@ bindsym XF86AudioPrev exec playerctl previous
 #bindsym Mod1+Down exec "ddcutil setvcp 10 -10 && sleep 0.2"
 
 #
-# clipboard manger
+# Clipboard manger
 #
 exec wl-paste -t text --watch clipman store --max-items=60 --histpath="~/.local/share/clipman.json"
 bindsym Mod4+Shift+v exec clipman pick --tool="wofi" --max-items=30 --histpath="~/.local/share/clipman.json"
@@ -278,7 +276,7 @@ bindsym Mod4+Shift+z exec wl-color-picker
 # path: $HOME/Pictures/Screenshots/
 #
 
-bindsym Print exec grim -g "$(slurp)" - | wl-copy
+bindsym Print exec grim -g "$(slurp)" - | wl-copy --type image/png
 bindsym Mod1+Print exec grim | wl-copy
 bindsym Mod4+Print exec grim ~/Pictures/ScreenShots/$(date +'%F%R_grim.png')
 
@@ -330,47 +328,42 @@ for_window [class = "(?i)pinentry"] floating enable
 for_window [title = "Administrator privileges required"] floating enable
 for_window [title = "Firefox - Sharing Indicator"] kill
 for_window [title = "Firefox — Sharing Indicator"] kill
-### Status Bar:
-#
-# Read `man 5 sway-bar` for more information about this section.
-# bar {
-#     position top
+for_window [urgent=latest] focus
+for_window [app_id="dunst"] opacity 0.9
 
-#     # When the status_command prints a new line to stdout, swaybar updates.
-#     # The default just shows the current date and time.
-#     status_command while date +'%Y-%m-%d %I:%M:%S %p'; do sleep 1; done
+# === Tomorrow Night Palette ===
+set $background        #1d1f21
+set $foreground        #c5c8c6
+set $black             #1d1f21
+set $red               #cc6666
+set $green             #b5bd68
+set $yellow            #f0c674
+set $blue              #81a2be
+set $magenta           #b294bb
+set $cyan              #8abeb7
+set $white             #c5c8c6
+set $gray              #5f5f5f
+set $light_gray        #888888
 
-#     colors {
-#         statusline #ffffff
-#         background #323232
-#         inactive_workspace #32323200 #32323200 #5c5c5c
-#     }
-# }
-
-
-# include colour theme
-include ~/.config/sway/catppuccin-frappe 
-
-# target                 title     bg    text   indicator  border
-client.focused           $lavender $base $text  $mantle $crust
-client.focused_inactive  $overlay0 $base $text  $mantle $overlay0
-client.unfocused         $overlay0 $base $text  $mantle $overlay0
-client.urgent            $blue    $base $peach $overlay0  $peach
-client.placeholder       $overlay0 $base $text  $overlay0  $overlay0
-client.background        $base
+# target                 title        bg     text         indicator   border
+client.focused          $light_gray $black   $white      $light_gray  $light_gray
+client.unfocused        $black      $black   $white       $black      $black
+client.focused_inactive $black      $black   $light_gray  $gray       $light_gray
+client.urgent           $black      $red     $white       $red        $red
+client.background       $background
 
 bar {
   colors {
-    background         $base
-    statusline         $text
-    focused_statusline $text
-    focused_separator  $base
+    background         $black
+    statusline         $white
+    focused_statusline $white
+    focused_separator  $black
 
-    # target           border bg        text
-    focused_workspace  $base  $text    $crust
-    active_workspace   $base  $surface2 $text
-    inactive_workspace $base  $base     $text
-    urgent_workspace   $base  $subtext1      $crust
+    # target           border  bg              text
+    focused_workspace  $black  $gray           $white
+    active_workspace   $black  $light_gray     $white
+    inactive_workspace $black  $black          $white
+    urgent_workspace   $red    $red            $white
   }
     position top
     status_command i3status-rs $i3statusrs_config 
@@ -391,8 +384,16 @@ bar {
     #     spawned in floating mode, not windows that become floating afterwards.
     #
     default_floating_border pixel
+    #
+    # gaps inner|outer|horizontal|vertical|top|right|bottom|left all|current
+    #       set|plus|minus|toggle <amount>
+    #            Changes the inner or outer gaps for either all workspaces or the
+    #            current workspace. outer gaps can be altered per side with top,
+    #            right, bottom, and left or per direction with horizontal and
+    #            vertical.
+    #
+    # gaps inner 10
 
-#
 # for more information, see https://wiki.archlinux.org/title/Wayland#XWayland
 # Note: Nvidia drivers prior to version 470 (e.g. nvidia-390xx-dkmsAUR) do not
 # support hardware accelerated XWayland, causing non-Wayland-native applications
@@ -418,11 +419,20 @@ exec pipewire-pulse
 ### Notification daemon
 #
 # Mako is a lightweight Wayland notification daemon
+#
+#
+    #  art_borders on|no_gaps|off
+    #    f smart_borders are on, borders will only be enabled if the
+    #    orkspace has more than one visible child. If smart_borders is
+    #   s et to no_gaps, borders will only be enabled if the workspace
+    #   a s more than one visible child and gaps equal to zero.
+    smart_borders o
+
 # Mako is direct and easy to use, so I use it if you  want to use
 # another notification-daemon, see https://wiki.archlinux.org/title/Desktop_notifications
 #
 
-exec mako  
+exec dunst
 
 # Prevents swayidle from sleeping while any application
 exec sway-audio-idle-inhibit

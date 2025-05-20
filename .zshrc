@@ -14,7 +14,6 @@
 # setup, too, just by copying our global zshrc to their ${HOME}/.zshrc.
 # Adjustments would still go to the .zshrc.local file.
 ################################################################################
-
 ## Inform users about upgrade path for grml's old zshrc layout, assuming that:
 ## /etc/skel/.zshrc was installed as ~/.zshrc,
 ## /etc/zsh/zshrc was installed as ~/.zshrc.global and

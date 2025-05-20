@@ -1,5 +1,20 @@
 [theme]
 theme = "ctp-mocha"
+[theme.overrides]
+idle_bg = "#1d1f21"
+idle_fg = "#c4c8c5"
+info_bg = "#363a41"
+info_fg = "#c4c8c5"
+good_bg = "#1d1f21"
+good_fg = "#c4c8c5"
+warning_bg = "#f0c574"
+warning_fg = "#1d1f21"
+critical_bg = "#cc6666"
+critical_fg = "#1e1e2e"
+separator = "\ue0b2"
+separator_bg = "auto"
+separator_fg = "auto"
+
 [icons]
 icons = "awesome6"
 [icons.overrides]
@@ -11,7 +26,7 @@ bat_discharging = " |v| "
 [[block]]
 block = "memory"
 format = " $icon $mem_total_used_percents.eng(w:2) "
-
+format_alt = "$icon $zram_decompressed"
 [[block]]
 block = "load"
 interval = 1
