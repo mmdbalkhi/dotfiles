@@ -7,8 +7,8 @@
 export ZSH="$HOME/.zsh/"
 
 export HISTORY_IGNORE="(ls|cd|pwd|exit|reboot|poweroff|history|cd -|cd ..|sudo poweroff -f|sudo reboot -f|code|code .|)"
-export EDITOR="vim"              # $EDITOR use Vim in terminal
-export VISUAL="vim"           # $VISUAL use Vim in GUI mode
+export EDITOR="kak"              # $EDITOR use Vim in terminal
+export VISUAL="kak"           # $VISUAL use Vim in GUI mode
 export LANG=en_US.UTF-8
 export PATH="$HOME/bin:$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/go/bin:$PATH"
 
@@ -276,7 +276,7 @@ alias man="batman"
 
 
 ## plugins
-plugins=(git zsh-syntax-highlighting zsh-z)
+plugins=(git zsh-syntax-highlighting zsh-z rustup)
 
 for _plugin in $plugins; do
 	_path="${ZSH}plugin/${_plugin}/${_plugin}.zsh"
@@ -293,7 +293,3 @@ for _plugin in $plugins; do
 done
 
 export GPG_TTY=$(tty)
-
-# fortune
-[ -x /usr/bin/fortune ] && /usr/bin/fortune void
-

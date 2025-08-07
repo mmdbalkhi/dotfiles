@@ -106,6 +106,7 @@ function gccd() {
 compdef _git gccd=git-clone
 
 alias gcl='git clone --recurse-submodules'
+alias gcld='gcl --depth 1'
 alias gclean='git clean --interactive -d'
 alias gpristine='git reset --hard && git clean --force -dfx'
 alias gcm='git checkout $(git_main_branch)'

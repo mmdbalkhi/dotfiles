@@ -57,10 +57,10 @@ zstyle ':prompt:grml:left:setup' items rc virtual-env change-root user at host p
 ## ZLE tweaks ##
 
 ## use the vi navigation keys (hjkl) besides cursor keys in menu completion
-#bindkey -M menuselect 'h' vi-backward-char        # left
-#bindkey -M menuselect 'k' vi-up-line-or-history   # up
-#bindkey -M menuselect 'l' vi-forward-char         # right
-#bindkey -M menuselect 'j' vi-down-line-or-history # bottom
+bindkey -M menuselect 'h' vi-backward-char        # left
+bindkey -M menuselect 'k' vi-up-line-or-history   # up
+bindkey -M menuselect 'l' vi-forward-char         # right
+bindkey -M menuselect 'j' vi-down-line-or-history # bottom
 
 ## set command prediction from history, see 'man 1 zshcontrib'
 #is4 && zrcautoload predict-on && \
@@ -115,10 +115,10 @@ setopt nonomatch
 setopt NO_clobber
 
 ## don't warn me about bg processes when exiting
-#setopt nocheckjobs
+setopt nocheckjobs
 
 ## alert me if something failed
-#setopt printexitvalue
+setopt printexitvalue
 
 ## with spelling correction, assume dvorak kb
 setopt dvorak
@@ -128,7 +128,7 @@ setopt dvorak
 
 ## if a new command line being added to the history list duplicates an older
 ## one, the older command is removed from the list
-is4 && setopt histignorealldups
+# is4 && setopt histignorealldups
 
 ## compsys related snippets ##
 
@@ -184,7 +184,7 @@ is4 && setopt histignorealldups
 #alias -g '...'='../..'
 #alias -g '....'='../../..'
 alias -g BG='& exit'
-alias -g C='|wc -l'
+alias -g C='|wl-copy'
 alias -g G='|grep'
 alias -g H='|head'
 alias -g Hl=' --help |& less -r'
@@ -287,22 +287,22 @@ manzsh()  { /usr/bin/man zshall |  most +/"$1" ; }
 #}
 
 ## Memory overview
-memusage() {
-    ps aux | awk '{if (NR > 1) print $5;
-                   if (NR > 2) print "+"}
-                   END { print "p" }' | dc
-}
+# memusage() {
+#     ps aux | awk '{if (NR > 1) print $5;
+#                    if (NR > 2) print "+"}
+#                    END { print "p" }' | dc
+# }
 
-## print hex value of a number
-#hex() {
-#    emulate -L zsh
-#    if [[ -n "$1" ]]; then
-#        printf "%x\n" $1
-#    else
-#        print 'Usage: hex <number-to-convert>'
-#        return 1
-#    fi
-#}
+# print hex value of a number
+hex() {
+   emulate -L zsh
+   if [[ -n "$1" ]]; then
+       printf "%x\n" $1
+   else
+       print 'Usage: hex <number-to-convert>'
+       return 1
+   fi
+}
 
 ## log out? set timeout in seconds...
 ## ...and do not log out in some specific terminals:
