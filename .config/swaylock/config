@@ -36,10 +36,9 @@ indicator-thickness=7
 clock
 
 # bg
-effect-blur=12x12
+effect-blur=2x2
 effect-vignette=0.5:0.5
-image=~/w/dotfiles/.wallpaper/komi.jpg
-
+image=~/Pictures/wp7501701-komi-cant-communicate-wallpapers.png
  
 # Flags
 daemonize

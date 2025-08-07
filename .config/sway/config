@@ -15,6 +15,7 @@ set $right l
 set $browser MOZ_ENABLE_WAYLAND=1 firefox
 # Your preferred terminal emulator
 set $term st
+set $secterm kitty
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
@@ -112,6 +113,7 @@ input type:keyboard xkb_numlock enabled
 #
     # Start a terminal
     bindsym Mod4+Return exec $term
+    bindsym Mod4+Shift+Return exec $secterm
 
     # Kill focused window
     bindsym Mod4+Shift+c kill
@@ -124,7 +126,7 @@ input type:keyboard xkb_numlock enabled
 
     # Drag floating windows by holding down Mod4 and left mouse button.
     # Resize them with right mouse button + Mod4.
-    # Despite the name, also works for non-floating windows.
+   # Despite the name, also works for non-floating windows.
     # Change normal to inverse to use left mouse button for resizing and right
     # mouse button for dragging.
     floating_modifier Mod4 normal
@@ -391,9 +393,19 @@ bar {
     #            current workspace. outer gaps can be altered per side with top,
     #            right, bottom, and left or per direction with horizontal and
     #            vertical.
-    #
-    # gaps inner 10
-
+    #gaps inner 10
+# swayfx
+    blur_radius 3
+    blur_passes 1
+    blur enable
+    shadows disable
+layer_effects "i3status-rs" {
+    blur enable;
+    blur_xray enable;
+    blur_ignore_transparent enable;
+    shadows enable;
+    corner_radius 20;
+}
 # for more information, see https://wiki.archlinux.org/title/Wayland#XWayland
 # Note: Nvidia drivers prior to version 470 (e.g. nvidia-390xx-dkmsAUR) do not
 # support hardware accelerated XWayland, causing non-Wayland-native applications
