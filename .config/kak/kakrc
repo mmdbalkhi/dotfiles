@@ -25,6 +25,12 @@ colorscheme tomorrow-night
 hook global BufOpenFile .* %{ editorconfig-load }
 hook global BufNewFile .* %{ editorconfig-load }
 
+# Enable file wraping
+# --------------------
+# https://github.com/mawww/kakoune/wiki/Wrapping#using-the-builtin-highlighter
+
+addhl global/ wrap
+
 # Filetype specific hooks
 # ───────────────────────
 

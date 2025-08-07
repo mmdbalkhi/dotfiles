@@ -1,12 +1,22 @@
 # PLUGINs
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
 plug "andreyorst/plug.kak" noload
-plug "andreyorst/smarttab.kak" defer smarttab %{
-    set-option global softtabstop 2
+plug "andreyorst/kaktree" config %{
+    hook global WinSetOption filetype=kaktree %{
+        remove-highlighter buffer/numbers
+        remove-highlighter buffer/matching
+        remove-highlighter buffer/wrap
+        remove-highlighter buffer/show-whitespaces
+    }
+    kaktree-enable
 }
 
-# indent 
-hook global WinCreate .* %{ expandtab }
+# plug "andreyorst/smarttab.kak" defer smarttab %{
+#     set-option global softtabstop 4
+# }
+
+# # indent
+# hook global WinCreate .* %{ expandtab }
 
 # LSP
 map global user l ':enter-user-mode lsp<ret>' -docstring 'LSP mode'
@@ -79,32 +89,5 @@ hook -group lsp-filetype-go global BufSetOption filetype=go %{
     }
 }
 
-hook -group lsp-filetype-rust global BufSetOption filetype=rust %{
-    set-option buffer lsp_servers %{
-        [rust-analyzer]
-        root_globs = ["Cargo.toml"]
-        single_instance = true
-        command = "sh"
-        args = [
-            "-c",
-            """
-                if path=$(rustup which rust-analyzer 2>/dev/null); then
-                    exec "$path"
-                else
-                    exec rust-analyzer
-                fi
-            """,
-        ]
-        [rust-analyzer.experimental]
-        commands.commands = ["rust-analyzer.runSingle"]
-        hoverActions = true
-        [rust-analyzer.settings.rust-analyzer]
-        # See https://rust-analyzer.github.io/manual.html#configuration
-        # cargo.features = []
-        check.command = "clippy"
-    }
-}
-
 eval %sh{kak-lsp --kakoune -s $kak_session}
 lsp-enable
-
