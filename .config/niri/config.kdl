@@ -64,6 +64,7 @@ binds {
     Mod+D { spawn "bmenu"; }
     Mod+Alt+L { spawn "swaylock"; }
     Mod+Shift+V { spawn "clipboard" ;}
+    Ctrl+Shift+Z { spawn "wl-color-picker" ;}
 
     XF86AudioPlay        allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioStop        allow-when-locked=true { spawn-sh "playerctl stop"; }
