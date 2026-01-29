@@ -1,0 +1,3 @@
+fpath=(~/.zsh/completions $fpath)
+
+zstyle ':grml:completion:compinit' arguments -i

@@ -11,11 +11,10 @@ export EDITOR="kak"              # $EDITOR use Vim in terminal
 export VISUAL="kak"           # $VISUAL use Vim in GUI mode
 export LANG=en_US.UTF-8
 export PATH="$HOME/bin:$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/go/bin:$PATH"
-
+export GPG_TTY=$(tty)
 #########################
 ######### PATH ##########
 #########################
-
 
 if [ -d "$HOME/.bin" ] ;
   then PATH="$HOME/.bin:$PATH"
@@ -87,42 +86,10 @@ function extract {
   fi
 }
 
-mergeav() {
-	if [[ -z $1 || -z $2 ]]; then
-		echo "Usage: mergeav <videofile> <audiofile>"
-	fi
-	cp $1 $1.back
-	cp $2 $2.back
-	local ext="${1#*.}"
-	if ffmpeg -i $1 -i $2 -map 0:v -map 1:a -c:v copy -shortest "$(basename $1).new.$ext"; then
-		rm -v $1.back $2.back -f
-	else
-		echo "FAILED"
-		mv $1.back $1 
-		mv $2.back $2
-	fi
-}
-# navigation
-up () {
-  local d=""
-  local limit="$1"
-  
-  # Default to limit of 1
-  if [ -z "$limit" ] || [ "$limit" -le 0 ]; then
-    limit=1
-  fi
-  
-  for ((i=1;i<=limit;i++)); do
-    d="../$d"
-  done
-  
-  # perform cd. Show error if cd fails
-  if ! cd "$d"; then
-    echo "Couldn't go up $limit dirs.";
-  fi
+ipinfo() {
+    curl -s "https://ipapi.co/${1}/json/" | jq 'del(.readme)'
 }
 
-# aria2 download part to part
 pdownload(){
     while IFS= read -r line; do
         printf '%s\n' "$line"
@@ -130,27 +97,12 @@ pdownload(){
     done < $1
 }
 
-# cd and run code
-cdcode (){
-	cd $1 && code .
-}
-
-
 venv(){
   if [ -f .venv/bin/activate ]; then
     . .venv/bin/activate
   else
 	  virtualenv .venv && . .venv/bin/activate
   fi
-}
-
-edit(){
-  emacsclient -c -a 'emacs' $@ &> /dev/null &
-}
-
-mkrp() {
-  mkdir $1 && cd $1
-  git init
 }
 
 torrentdl(){
@@ -246,14 +198,14 @@ alias man="batman"
 
 
 ## plugins
-plugins=(git zsh-syntax-highlighting zsh-z rustup)
+plugins=(git zsh-syntax-highlighting zsh-z)
 
 for _plugin in $plugins; do
-	_path="${ZSH}plugin/${_plugin}/${_plugin}.zsh"
+	_path="${ZSH}plugins/${_plugin}/${_plugin}.zsh"
 	if [ -f $_path ]; then
 		source $_path
 	else
-		_path="${ZSH}plugin/${_plugin}/${_plugin}.plugin.zsh"
+		_path="${ZSH}plugins/${_plugin}/${_plugin}.plugin.zsh"
 		if [ -f $_path ]; then
 			source $_path
 		else
@@ -262,7 +214,8 @@ for _plugin in $plugins; do
 	fi
 done
 
-export GPG_TTY=$(tty)
+## completions
+zrcautoload _cargo _niri _rustup _singbox
 
 export HISTCONTROL=ignoredups:erasedups
 setopt HIST_IGNORE_SPACE
