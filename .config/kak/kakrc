@@ -19,6 +19,12 @@ hook global WinCreate ^[^*]+$ %{
 
 colorscheme tomorrow-night
 
+# Tab as space?
+# -------------------------
+
+# set-option global indentwidth 4
+# set-option global tabstop 4
+
 # Enable editor config
 # ────────────────────
 
@@ -48,6 +54,32 @@ hook global WinSetOption filetype=python %{
 }
 
 map -docstring "xml tag objet" global object t %{c<lt>([\w.]+)\b[^>]*?(?<lt>!/)>,<lt>/([\w.]+)\b[^>]*?(?<lt>!/)><ret>}
+
+define-command W %{
+    evaluate-commands %sh{
+        file="$kak_buffile"
+        [ -z "$file" ] && exit 0
+        case "$file" in
+            *.rs)
+                rustfmt "$file" ;;
+            *.py)
+                ruff check --fix "$file"
+                ruff format "$file"
+                ;;
+            *.c|*.h)
+                clang-format -i "$file" ;;
+            *)
+                exit 0 ;;
+        esac
+        if ! git diff --quiet -- "$file" 2>/dev/null; then
+            printf 'edit!\n'
+        fi
+    }
+    write
+}
+
+
+map global normal <c-s> ':W<ret>'
 
 # Highlight the word under the cursor
 # ───────────────────────────────────
