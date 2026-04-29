@@ -2,14 +2,33 @@ input {
     keyboard {
         xkb {
           layout "us,ir"
-          options "caps:none,grp:caps_toggle"
+          options "grp:switch,grp_led:scrol,grp:caps_toggle"
         }
-        numlock
+    }
+    touchpad {
+        // off
+        tap
+        dwt
+        // dwtp
+        // drag false
+        // drag-lock
+        natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-factor 1.0
+        // scroll-factor vertical=1.0 horizontal=-2.0
+        // scroll-method "two-finger"
+        // scroll-button 273
+        // scroll-button-lock
+        // tap-button-map "left-middle-right"
+        // click-method "clickfinger"
+        // left-handed
+        // disabled-on-external-mouse
+        // middle-emulation
     }
 }
 
-spawn-sh-at-startup "~/.config/niri/niri_startup.sh"
-
+spawn-sh-at-startup "runsvdir -P ~/.local/service"
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 prefer-no-csd
@@ -49,6 +68,40 @@ layout {
    }
 }
 
+window-rule {
+    match app-id="^kitty$"
+
+    background-effect {
+        blur true
+    }
+}
+
+window-rule {
+    match app-id="^org.pwmt.zathura$"
+
+    opacity 0.85
+    background-effect {
+        blur true
+    }
+}
+
+layer-rule {
+    match namespace="dunst"
+    match at-startup=true
+    match layer="overlay"
+
+    opacity 0.9
+
+    geometry-corner-radius 14
+
+    background-effect {
+        xray true
+        blur true
+        noise 0.01
+        saturation 1.2
+    }
+}
+
 cursor {
     xcursor-theme "Adwaita"
     xcursor-size 17
@@ -66,6 +119,27 @@ binds {
     Mod+Shift+V { spawn "clipboard" ;}
     Ctrl+Shift+Z { spawn "wl-color-picker" ;}
 
+    XF86AudioRaiseVolume allow-when-locked=true {
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05+"
+    }
+    XF86AudioLowerVolume allow-when-locked=true {
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "0.05-"
+    }
+    XF86AudioMute allow-when-locked=true {
+        spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"
+    }
+
+    XF86AudioMicMute allow-when-locked=true {
+        spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"
+    }
+
+    XF86MonBrightnessUp allow-when-locked=true {
+        spawn "brightnessctl" "--class=backlight" "set" "+5%"
+    }
+    XF86MonBrightnessDown allow-when-locked=true {
+        spawn "brightnessctl" "--class=backlight" "set" "5%-"
+    }
+
     XF86AudioPlay        allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioStop        allow-when-locked=true { spawn-sh "playerctl stop"; }
     XF86AudioPrev        allow-when-locked=true { spawn-sh "playerctl previous"; }
@@ -74,8 +148,8 @@ binds {
     Mod+Shift+c repeat=false { close-window; }
 
     Mod+Left  { focus-column-left; }
-    Mod+Down  { focus-window-down; }
-    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-workspace-down; }
+    Mod+Up    { focus-workspace-up; }
     Mod+Right { focus-column-right; }
     Mod+H     { focus-column-left; }
     Mod+J     { focus-window-down; }
@@ -83,15 +157,15 @@ binds {
     Mod+L     { focus-column-right; }
 
     Mod+Shift+Left  { move-column-left; }
-    Mod+Shift+Down  { move-window-down; }
-    Mod+Shift+Up    { move-window-up; }
+    Mod+Shift+Down  { move-window-down-or-to-workspace-down; }
+    Mod+Shift+Up    { move-window-up-or-to-workspace-up; }
     Mod+Shift+Right { move-column-right; }
     Mod+Shift+H     { move-column-left; }
     Mod+Shift+J     { move-window-down; }
     Mod+Shift+K     { move-window-up; }
     Mod+Shift+L     { move-column-right; }
 
-  // Consume one window from the right to the bottom of the focused column.
+    // Consume one window from the right to the bottom of the focused column.
     Mod+Comma  { consume-window-into-column; }
     // Expel the bottom window from the focused column to the right.
     Mod+Period { expel-window-from-column; }
@@ -167,4 +241,3 @@ binds {
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
 }
-
