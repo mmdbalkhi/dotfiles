@@ -1,0 +1,5 @@
+
+set -e
+
+    ls .venv || virtualenv --python=/usr/bin/python3 .venv
+    .venv/bin/pip install .

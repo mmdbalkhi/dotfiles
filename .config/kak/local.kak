@@ -1,19 +1,6 @@
-# PLUGINs
 source "%val{config}/plugins/plug.kak/rc/plug.kak"
-plug "andreyorst/plug.kak" noload
-plug "andreyorst/kaktree" config %{
-    hook global WinSetOption filetype=kaktree %{
-        remove-highlighter buffer/numbers
-        remove-highlighter buffer/matching
-        remove-highlighter buffer/wrap
-        remove-highlighter buffer/show-whitespaces
-    }
-    kaktree-enable
-}
 
-plug "andreyorst/smarttab.kak" defer smarttab %{
-     set-option global softtabstop 4
-}
+plug "andreyorst/plug.kak" noload
 
 hook global WinCreate .* %{ expandtab }
 
