@@ -1,17 +1,31 @@
 #!/usr/bin/env zsh
-
 ########################
 ####### EXPORT #########
 ########################
 
 export ZSH="$HOME/.zsh/"
 
-export HISTORY_IGNORE="(ls|cd|pwd|exit|reboot|poweroff|history|cd -|cd ..|sudo poweroff -f|sudo reboot -f|code|code .|)"
+export HISTORY_IGNORE="(ls|cd|pwd|exit|reboot|poweroff|history|cd -|cd ..|isort .|)"
 export EDITOR="kak"              # $EDITOR use Vim in terminal
 export VISUAL="kak"           # $VISUAL use Vim in GUI mode
 export LANG=en_US.UTF-8
-export PATH="$HOME/bin:$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/go/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/go/bin:$HOME/Documents/Study:$HOME/.elan/bin:$PATH"
 export GPG_TTY=$(tty)
+
+
+export HISTORY_IGNORE="(ls|cd|pwd|exit|reboot|poweroff|history|cd -|cd ..|sudo poweroff -f|sudo reboot -f|code|code .|loginctl poweroff|loginctl reboot)"
+export HISTCONTROL=ignoredups:erasedups
+export HISTSIZE=5000000
+export SAVEHIST=5000000
+
+setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_FIND_NO_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_IGNORE_SPACE
+
 #########################
 ######### PATH ##########
 #########################
@@ -37,7 +51,7 @@ fi
 #########################
 
 # Comment this line out to enable default emacs-like bindings
-bindkey -v
+# bindkey -v
 
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
@@ -86,15 +100,73 @@ function extract {
   fi
 }
 
-ipinfo() {
-    curl -s "https://ipapi.co/${1}/json/" | jq 'del(.readme)'
+canon() {
+    sed \
+      -e 's/\r$//' \
+      -e 's/[ \t]\+$//' \
+      -e :a -e '/^\n*$/{$d;N;ba}' -e '$a\'
 }
 
-pdownload(){
-    while IFS= read -r line; do
-        printf '%s\n' "$line"
-        aria2c $line -x 12
-    done < $1
+
+f0x() {
+    local url="$(pass f0x_url)"
+    local header="XWHO: $(pass f0x_token)"
+    local out
+
+    if [ -t 0 ]; then
+        # no stdin
+        if [ $# -eq 0 ]; then
+            echo "usage:"
+            echo "  echo 'text' | paste"
+            echo "  paste 'text'"
+            echo "  paste file.txt"
+            return 1
+        fi
+
+        if [ -f "$1" ]; then
+            out=$(curl -fsS -H "$header" --data-binary @"$1" "$url") || return 1
+        else
+            out=$(printf "%s" "$*" | curl -fsS -H "$header" --data-binary @- "$url") || return 1
+        fi
+    else
+        # stdin
+        out=$(curl -fsS -H "$header" --data-binary @- "$url") || return 1
+    fi
+
+    echo $out
+}
+
+
+ipinfo() {
+    curl -s -H "Authorization: Bearer $(pass ipinfo)" https://ipinfo.io/$1 | jq
+}
+
+ytdl() {
+    local args=()
+
+    args+=(
+        # "-N" "3"
+        "--js-runtimes" "node"
+        "-f" "bestvideo[height=1080][proto*=https]+bestaudio/best[height=1080][proto*=https]/best[height=1080]/best"
+        "--embed-subs" "--embed-metadata" "--embed-thumbnail"
+        "--merge-output-format" "mkv"
+        "-o" "%(playlist)s/%(playlist_index)s - %(title)s [%(uploader)s].%(ext)s"
+        "--download-archive" "archive.txt"
+        "--cookies-from-browser" "firefox"
+        "--proxy" "socks5://127.0.0.1:9050"
+    )
+
+    if [ $# -eq 0 ]; then
+        echo "usage: ytdl [OPTIONS] URL"
+        echo "  A wrapper on yt-dlp :>"
+        echo "  examples:"
+        echo "    ytdl https://youtu.be/..."
+        echo "    ytdl -f 137+140 https://..."
+        echo "    ytdl --no-proxy https://..."
+        return 1
+    fi
+
+    command yt-dlp "${args[@]}" "$@"
 }
 
 venv(){
@@ -168,7 +240,6 @@ fi
 
 # youtube-dl
 
-alias yt-dlp="yt-dlp --proxy=socks5://127.0.0.1:8086"
 alias youtube-dl="yt-dlp"
 alias yta-aac="youtube-dl --extract-audio --audio-format aac "
 alias yta-best="youtube-dl --extract-audio --audio-format best "
@@ -180,22 +251,38 @@ alias yta-vorbis="youtube-dl --extract-audio --audio-format vorbis "
 alias yta-wav="youtube-dl --extract-audio --audio-format wav "
 alias ytv-best="youtube-dl -f bestvideo+bestaudio "
 
-# switch between shells
-
-alias tobash="sudo chsh $USER -s /bin/bash && echo 'Now log out.'"
-alias tozsh="sudo chsh $USER -s /bin/zsh && echo 'Now log out.'"
-alias tofish="sudo chsh $USER -s /bin/fish && echo 'Now log out.'"
-
-# xbps
-alias update="xbps-install -Su"
-
 # batman
-#
 alias man="batman"
+
+# f0x
+alias -g F="| canon |f0x"
+
+alias -g J="| jq"
+
+alias ta='task add +inbox'
+alias ti='task +inbox'
+alias tn='task +next'
+alias tq='task +quick'
+alias td='task done'
+alias tt='task today'
+alias tp='task projects'
+
+
+# battery
+alias battery="upower -i /org/freedesktop/UPower/devices/battery_BAT0"
+
+
+alias aria2="aria2c -x 16 -s 16 -k 1M -c"
+
+pdownload(){
+    while IFS= read -r line; do
+        printf '%s\n' "$line"
+        aria2 $line
+    done < $1
+}
 
 ## use fzf plugin
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
 
 ## plugins
 plugins=(git zsh-syntax-highlighting zsh-z)
@@ -216,9 +303,26 @@ done
 
 ## completions
 zrcautoload _cargo _niri _rustup _singbox
-
-export HISTCONTROL=ignoredups:erasedups
-setopt HIST_IGNORE_SPACE
-setopt SHARE_HISTORY
-
 zstyle ':completion:*' rehash true
+
+precmd() {
+  print -Pn "\e]2:zsh\a"
+}
+
+preexec() {
+  local cmd=${1%% *}
+  print -Pn "\e]2:${cmd}\a"
+}
+
+# BEGIN opam configuration
+# This is useful if you're using opam as it adds:
+#   - the correct directories to the PATH
+#   - auto-completion for the opam binary
+# This section can be safely removed at any time if needed.
+[[ ! -r '/home/komeil/.opam/opam-init/init.zsh' ]] || source '/home/komeil/.opam/opam-init/init.zsh' > /dev/null 2> /dev/null
+# END opam configuration
+
+[[ -n "$ZSH_WELCOME_LOADED" ]] && return
+ZSH_WELCOME_LOADED=1
+
+[[ -f ~/.zsh_welcome ]] && source ~/.zsh_welcome

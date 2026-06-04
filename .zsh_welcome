@@ -1,0 +1,24 @@
+#!/bin/zsh
+
+print -P "%F{cyan}┌─ System ─────────────────────────────────────┐%f"
+print -P "%F{cyan}│%f OS       $(source /etc/os-release && echo "$PRETTY_NAME")"
+print -P "%F{cyan}│%f Host     $(hostname)"
+print -P "%F{cyan}│%f Uptime   $(uptime -p | sed 's/up //')"
+print -P "%F{cyan}│%f Disk     $(df -h / | awk 'NR==2 {print $4 " / " $2}')"
+print -P "%F{cyan}│%f Network  $(ip -4 -o addr show |
+awk '$2 != "lo" && $2 !~ /^br-/ && $2 !~ /^docker/ {
+    split($4, a, "/")
+    print $2 ": " a[1]
+}')"
+print -P "%F{cyan}└──────────────────────────────────────────────┘%f"
+
+TODAY=$(task +TODAY count)
+print -P "%F{cyan}┌─ Tasks:%f %F{yellow}${TODAY}%F{cyan} ───────────────────────────────────┐%f"
+task +TODAY rc.verbose=nothing \
+            rc.report.next.columns=description \
+            rc.report.next.labels= \
+            next |
+while IFS= read -r line; do
+    printf "  %-40.40s\n" "$line"
+done
+print -P "%F{cyan}└──────────────────────────────────────────────┘%f"
