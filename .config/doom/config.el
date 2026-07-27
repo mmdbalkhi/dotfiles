@@ -74,3 +74,47 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 (setq shell-file-name "/bin/bash")
+
+;; fill column setting globaly
+(setq-default fill-column 80)
+(global-display-fill-column-indicator-mode 1)
+
+(custom-set-faces
+  '(line-number-current-line ((t (:inherit default :weight bold))))
+  '(fill-column-indicator ((t (:foreground "#5B6268" :weight thin)))))
+
+
+;; python, uv, etc. based on: https://mclare.blog/posts/using-uv-in-emacs/
+;;; Python + uv + pyrefly
+(defvar my/pyrefly-executable "/home/komeil/w/pyrefly/target/release/pyrefly"
+  "Absolute path to the pyrefly executable.")
+
+(defun my/python-uv-activate ()
+  "Activate .venv from the current project root, if present."
+  (let* ((root (doom-project-root))
+         (venv (and root (expand-file-name ".venv" root)))
+         (python (and venv
+                      (expand-file-name
+                       (if (eq system-type 'windows-nt)
+                           "Scripts/python.exe"
+                         "bin/python")
+                       venv))))
+    (when (and python (file-exists-p python))
+      (setq-local python-shell-interpreter python)
+      (let ((venv-bin (file-name-directory python)))
+        (setq-local exec-path (cons venv-bin (remove venv-bin exec-path)))
+        (setenv "PATH" (concat venv-bin path-separator (getenv "PATH"))))
+      (setenv "VIRTUAL_ENV" venv)
+      (setenv "PYTHONHOME" nil))))
+
+(add-hook 'python-mode-hook #'my/python-uv-activate)
+(add-hook 'python-ts-mode-hook #'my/python-uv-activate)
+
+(after! eglot
+  (add-to-list 'eglot-server-programs
+               `((python-mode python-ts-mode)
+                 . (,my/pyrefly-executable "lsp"))))
+
+(add-hook 'python-mode-hook #'eglot-ensure)
+(add-hook 'python-ts-mode-hook #'eglot-ensure)
+
