@@ -1,0 +1,15 @@
+(define-public %core-packages
+  '("nss-certs"
+    "git"
+    "curl"
+    "wget"
+    "coreutils"
+    "which"
+    "ripgrep"
+    "fd"
+    "tree"
+    "htop"
+    "zsh"
+    "grml-zsh-config"
+    "direnv"
+    "openssh"))
