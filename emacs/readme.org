@@ -190,7 +190,7 @@ Fonts, Nord theme, dashboard, modeline, visual helpers (indent bars, rainbow del
                     :height 190)
 ;; Theme. Also you can use custom themes. check this:
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Custom-Themes.html
-(use-package nord-theme
+(use-package nord-theme  ;; FIXME: maybe doom-nord? not sure
   :demand t
   :config
   (load-theme 'nord t))
@@ -620,10 +620,19 @@ Python (with UV + Pyrefly), Go, Rust (via rustic), C/C++, web, YAML, Markdown, O
 (use-package geiser-guile
   :mode "\\.scm\\'")
 
+(add-to-list 'auto-mode-alist '("\\.scm\\'" . scheme-mode))  ;; TODO: module + clean-up
+(add-to-list 'auto-mode-alist '("\\.guile\\'" . scheme-mode))
+(add-to-list 'auto-mode-alist '("\\.el\\'" . emacs-lisp-mode))
+(add-to-list 'auto-mode-alist '("\\.zsh\\'" . sh-mode))
+(add-to-list 'auto-mode-alist '("\\.bash\\'" . sh-mode))
+(add-to-list 'auto-mode-alist '("\\.json\\'" . json-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.toml\\'" . conf-toml-mode))
+(add-to-list 'auto-mode-alist '("\\.log\\'" . text-mode))
+
+(with-eval-after-load 'treesit-auto
+  (setq treesit-auto-langs (remq 'scheme treesit-auto-langs)))
 (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
 #+END_SRC
-
-#+RESULTS:
 
 * Apps (RSS)
 Elfeed + elfeed-org.

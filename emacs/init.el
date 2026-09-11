@@ -112,7 +112,7 @@
                     :height 190)
 ;; Theme. Also you can use custom themes. check this:
 ;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Custom-Themes.html
-(use-package nord-theme
+(use-package nord-theme  ;; FIXME: maybe doom-nord? not sure
   :demand t
   :config
   (load-theme 'nord t))
@@ -519,6 +519,17 @@
 (use-package geiser-guile
   :mode "\\.scm\\'")
 
+(add-to-list 'auto-mode-alist '("\\.scm\\'" . scheme-mode))  ;; TODO: module + clean-up
+(add-to-list 'auto-mode-alist '("\\.guile\\'" . scheme-mode))
+(add-to-list 'auto-mode-alist '("\\.el\\'" . emacs-lisp-mode))
+(add-to-list 'auto-mode-alist '("\\.zsh\\'" . sh-mode))
+(add-to-list 'auto-mode-alist '("\\.bash\\'" . sh-mode))
+(add-to-list 'auto-mode-alist '("\\.json\\'" . json-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.toml\\'" . conf-toml-mode))
+(add-to-list 'auto-mode-alist '("\\.log\\'" . text-mode))
+
+(with-eval-after-load 'treesit-auto
+  (setq treesit-auto-langs (remq 'scheme treesit-auto-langs)))
 (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
 ;; Languages:1 ends here
 
@@ -532,15 +543,3 @@
 (setq global-auto-revert-non-file-buffers t
       auto-revert-verbose nil)
 ;; Finalization:1 ends here
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
