@@ -1,0 +1,546 @@
+;; [[file:readme.org::*init.el: startup optimization][init.el: startup optimization:1]]
+;;; init.el --- Personal configuration file -*- lexical-binding: t; no-byte-compile: t; -*-
+;; NOTE: init.el is generated from readme.org. Please edit that file instead.
+
+;; `file-name-handler-alist' is consulted on every `require', `load' and various
+;; path/io functions. You get a minor speed up by nooping this.
+(unless (daemonp)
+  (defvar my--initial-file-name-handler-alist file-name-handler-alist)
+  (setq file-name-handler-alist nil)
+  (defun my-reset-file-handler-alist-h ()
+    (dolist (handler file-name-handler-alist)
+      (add-to-list 'my--initial-file-name-handler-alist handler))
+    (setq file-name-handler-alist my--initial-file-name-handler-alist))
+  (add-hook 'emacs-startup-hook #'my-reset-file-handler-alist-h)
+  (add-hook 'after-init-hook
+            (lambda ()
+              (setq gc-cons-threshold 16777216   ; 16MB
+                    gc-cons-percentage 0.1))))
+
+;; Ensure we are running out of this file's directory
+(setq user-emacs-directory (file-truename (file-name-directory load-file-name)))
+;; init.el: startup optimization:1 ends here
+
+;; [[file:readme.org::*init.el: large file handling & proxy][init.el: large file handling & proxy:1]]
+;; Large File Handling
+(global-so-long-mode 1)
+
+;; Large File Hook (> 128KB)
+(defun my/large-file-mode ()
+  "Disable heavy features for files larger than 128KB."
+  (when (> (buffer-size) 128000)
+    (display-line-numbers-mode -1)
+    (font-lock-mode -1)
+    (when (fboundp 'flycheck-mode) (flycheck-mode -1))
+    (when (bound-and-true-p global-treesit-auto-mode)
+      (treesit-auto-mode -1))
+    (auto-revert-mode 1)
+    (message "Large file detected: disabled heavy UI features for performance.")))
+(add-hook 'find-file-hook #'my/large-file-mode)
+
+;; Fix SSL certs for git/curl/treesit under Guix
+(when-let* ((profile (getenv "GUIX_PROFILE"))
+            (certs-dir (expand-file-name "etc/ssl/certs" profile))
+            (certs-file (expand-file-name "ca-certificates.crt" certs-dir)))
+  (when (file-exists-p certs-file)
+    (setenv "SSL_CERT_DIR" certs-dir)
+    (setenv "SSL_CERT_FILE" certs-file)
+    (setenv "GIT_SSL_CAINFO" certs-file)
+    (setenv "CURL_CA_BUNDLE" certs-file)))
+
+;; Optional proxy (uncomment if needed)
+ ;; (setq url-proxy-services
+ ;;       '(("no_proxy" . "^\\(localhost\\|127\\.0\\.0\\.1\\)")
+ ;;         ("http"  . "127.0.0.1:10808")
+ ;;         ("https" . "127.0.0.1:10808")
+ ;;         ("socks5" . "127.0.0.1:10808")))
+;; init.el: large file handling & proxy:1 ends here
+
+;; [[file:readme.org::*Guix Integration][Guix Integration:1]]
+;; --- Guix Integration ---
+(when (getenv "GUIX_PROFILE")
+  (let ((guix-bin (concat (getenv "GUIX_PROFILE") "/bin")))
+    (when (file-directory-p guix-bin)
+      (add-to-list 'exec-path guix-bin)
+      (setenv "PATH" (concat guix-bin ":" (getenv "PATH"))))))
+
+(setq exec-path (append exec-path
+                        '("/run/current-system/profile/bin"
+                          "/usr/local/bin"
+                          "/usr/bin")))
+;; Guix Integration:1 ends here
+
+;; [[file:readme.org::*Core Settings & Package Management][Core Settings & Package Management:1]]
+(setq user-full-name "Komeil Parseh"  ;; change me if you are not komeil :)
+      user-mail-address "komeilparseh@disroot.org")
+
+(setq shell-file-name "/usr/bin/zsh"
+      org-directory "~/org/")
+
+;; --- Guix detection ---
+(defvar my/guix-p (and (getenv "GUIX_PROFILE")
+                       (file-directory-p (getenv "GUIX_PROFILE")))
+  "Non-nil when we are running under Guix.")
+
+(require 'package)
+(setq package-archives
+      '(("melpa"  . "https://melpa.org/packages/")
+        ("gnu"    . "https://elpa.gnu.org/packages/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+(package-initialize)
+
+;; Only install from ELPA if the package is NOT already loadable
+(defun my/use-package-ensure-function (name ensure state)
+  (unless (or (package-installed-p name)
+              (locate-library (symbol-name name)))
+    (package-install name)))
+
+(setq use-package-ensure-function #'my/use-package-ensure-function)
+(setq use-package-always-ensure t)   ;; always try the smart function above
+(setq use-package-always-defer t)
+(setq use-package-enable-imenu-support t)
+;; Core Settings & Package Management:1 ends here
+
+;; [[file:readme.org::*UI & Aesthetics][UI & Aesthetics:1]]
+;; Fonts
+(set-face-attribute 'default nil
+                    :family "BlexMono Nerd Font Mono"
+                    :height 180
+                    :weight 'semi-light)
+(set-face-attribute 'variable-pitch nil
+                    :family "BlexMono Nerd Font Mono"
+                    :height 190)
+;; Theme. Also you can use custom themes. check this:
+;; https://www.gnu.org/software/emacs/manual/html_node/emacs/Custom-Themes.html
+(use-package nord-theme
+  :demand t
+  :config
+  (load-theme 'nord t))
+
+(use-package display-line-numbers
+  :hook (prog-mode . display-line-numbers-mode)
+  :custom (display-line-numbers-type t))
+
+(use-package dashboard
+  :demand t
+  :config
+  (setq dashboard-startup-banner 'official
+        dashboard-items '((recents  . 5)
+                          (projects . 5)
+                          (agenda   . 5))
+        dashboard-projects-backend 'project-el
+        dashboard-set-heading-icons t
+        dashboard-set-file-icons t)
+  (dashboard-setup-startup-hook))
+
+(use-package doom-modeline
+  :demand t
+  :hook (after-init . doom-modeline-mode))
+
+(use-package indent-bars
+  :hook (prog-mode . indent-bars-mode))
+
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package hl-todo
+  :hook (prog-mode . hl-todo-mode))
+
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
+
+(pixel-scroll-precision-mode 1)
+
+(use-package beacon
+  :config (beacon-mode 1))
+
+(use-package volatile-highlights
+  :config (volatile-highlights-mode 1))
+
+(use-package popper
+  :config
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode 1)
+  (popper-echo-mode 1))
+
+(use-package tab-bar
+  :config (tab-bar-mode 1))
+
+(use-package olivetti
+  :commands olivetti-mode)
+
+(use-package diff-hl
+  :hook (after-init . global-diff-hl-mode))
+
+;; Not yet in Guix so we use melpa
+(use-package vi-tilde-fringe
+  :ensure t
+  :hook ((prog-mode text-mode) . vi-tilde-fringe-mode))
+
+(use-package display-fill-column-indicator
+  :hook (prog-mode . display-fill-column-indicator-mode)
+  :custom
+  (display-fill-column-indicator-character ?│)
+  :config
+  (custom-set-faces
+   '(fill-column-indicator ((t (:foreground "#5B6268" :weight thin))))))
+;; UI & Aesthetics:1 ends here
+
+;; [[file:readme.org::*Completion & Navigation][Completion & Navigation:1]]
+(use-package vertico
+  :init (vertico-mode 1))
+
+(use-package marginalia
+  :init (marginalia-mode 1))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+(use-package consult
+  :bind (("C-s" . consult-line)
+         ("M-y" . consult-yank-pop)
+         ("C-x b" . consult-buffer)))
+
+(use-package company
+  :hook (prog-mode . company-mode)
+  :custom
+  (company-idle-delay 0.2)
+  (company-minimum-prefix-length 2))
+;; Completion & Navigation:1 ends here
+
+;; [[file:readme.org::*Modal Editing: Meow][Modal Editing: Meow:1]]
+(use-package meow
+  :demand t
+  :config
+  ;; https://github.com/meow-edit/meow/blob/master/GET_STARTED.org#set-up-command-layout
+  (defun meow-setup ()
+    (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
+    (meow-motion-overwrite-define-key
+     '("j" . meow-next)
+     '("k" . meow-prev)
+     '("<escape>" . ignore))
+
+    (meow-leader-define-key
+     '("1" . meow-digit-argument)
+     '("2" . meow-digit-argument)
+     '("3" . meow-digit-argument)
+     '("4" . meow-digit-argument)
+     '("5" . meow-digit-argument)
+     '("6" . meow-digit-argument)
+     '("7" . meow-digit-argument)
+     '("8" . meow-digit-argument)
+     '("9" . meow-digit-argument)
+     '("0" . meow-digit-argument)
+     '("/" . meow-keypad-describe-key)
+     '("?" . meow-cheatsheet))
+
+    (meow-normal-define-key
+     '("0" . meow-expand-0)
+     '("9" . meow-expand-9)
+     '("8" . meow-expand-8)
+     '("7" . meow-expand-7)
+     '("6" . meow-expand-6)
+     '("5" . meow-expand-5)
+     '("4" . meow-expand-4)
+     '("3" . meow-expand-3)
+     '("2" . meow-expand-2)
+     '("1" . meow-expand-1)
+     '("-" . negative-argument)
+     '(";" . meow-reverse)
+     '("," . meow-inner-of-thing)
+     '("." . meow-bounds-of-thing)
+     '("[" . meow-beginning-of-thing)
+     '("]" . meow-end-of-thing)
+     '("a" . meow-append)
+     '("A" . meow-open-below)
+     '("b" . meow-back-word)
+     '("B" . meow-back-symbol)
+     '("c" . meow-change)
+     '("d" . meow-delete)
+     '("D" . meow-backward-delete)
+     '("e" . meow-next-word)
+     '("E" . meow-next-symbol)
+     '("f" . meow-find)
+     '("g" . meow-cancel-selection)
+     '("G" . meow-grab)
+     '("h" . meow-left)
+     '("H" . meow-left-expand)
+     '("i" . meow-insert)
+     '("I" . meow-open-above)
+     '("j" . meow-next)
+     '("J" . meow-next-expand)
+     '("k" . meow-prev)
+     '("K" . meow-prev-expand)
+     '("l" . meow-right)
+     '("L" . meow-right-expand)
+     '("m" . meow-join)
+     '("n" . meow-search)
+     '("o" . meow-block)
+     '("O" . meow-to-block)
+     '("p" . meow-yank)
+     '("q" . meow-quit)
+     '("Q" . meow-goto-line)
+     '("r" . meow-replace)
+     '("R" . meow-swap-grab)
+     '("s" . meow-kill)
+     '("t" . meow-till)
+     '("u" . meow-undo)
+     '("U" . meow-undo-in-selection)
+     '("v" . meow-visit)
+     '("w" . meow-mark-word)
+     '("W" . meow-mark-symbol)
+     '("x" . meow-line)
+     '("X" . meow-goto-line)
+     '("y" . meow-save)
+     '("Y" . meow-sync-grab)
+     '("z" . meow-pop-selection)
+     '("'" . repeat)
+     '("<escape>" . ignore)))
+
+  (meow-setup)
+  (meow-global-mode 1)
+
+  (setq meow-use-clipboard t
+        meow-use-cursor-position-hack t)
+
+  (message "Meow loaded: %s, global-mode: %s"
+           (featurep 'meow)
+           meow-global-mode))
+
+  ;; Tree-sitter powered things for Meow (Guix has emacs-meow-tree-sitter)
+  (use-package meow-tree-sitter
+      :after meow
+      :config
+      (meow-tree-sitter-register-defaults
+       meow-use-cursor-position-hack t))
+;; Modal Editing: Meow:1 ends here
+
+;; [[file:readme.org::*Clipboard & System Integration][Clipboard & System Integration:1]]
+(when (and (eq system-type 'gnu/linux)
+           (executable-find "wl-copy")
+           (executable-find "wl-paste"))
+  (defun my/wl-copy (text &optional push)
+    "Copy TEXT to the Wayland clipboard using wl-copy."
+    (let ((process-connection-type nil))
+      (with-temp-buffer
+        (insert text)
+        (call-process-region (point-min) (point-max) "wl-copy" nil nil nil))))
+  (defun my/wl-paste ()
+    "Paste from the Wayland clipboard using wl-paste."
+    (with-temp-buffer
+      (when (= 0 (call-process "wl-paste" nil t nil))
+        (buffer-string))))
+  (setq interprogram-cut-function #'my/wl-copy
+        interprogram-paste-function #'my/wl-paste))
+;; Clipboard & System Integration:1 ends here
+
+;; [[file:readme.org::*Editor Enhancements][Editor Enhancements:1]]
+(use-package yasnippet
+  :hook (prog-mode . yas-minor-mode))
+
+(use-package smartparens
+  :hook (prog-mode . smartparens-mode)
+  :config (require 'smartparens-config))
+
+(use-package ws-butler
+  :hook (prog-mode . ws-butler-mode))
+
+(use-package ligature
+  :config
+  (ligature-set-ligatures 't '("www"))
+  (ligature-set-ligatures 'prog-mode
+                          '("www" "**" "***" "**/" "*>" "*/" "\\\\" "\\\\\\"
+                            "{-" "::" ":::" ":=" "!!" "!=" "!==" "-}" "----"
+                            "-->" "->" "->>" "-<" "-<<" "-~" "#{" "#[" "##"
+                            "###" "####" "#(" "#?" "#_" "#_(" ".-" ".=" ".."
+                            "..<" "..." "?=" "??" ";;" "/*" "/**" "/=" "/=="
+                            "/>" "//" "///" "&&" "||" "||=" "|=" "|>" "^="
+                            "$>" "++" "+++" "+>" "=:=" "==" "===" "==>" "=>"
+                            "=>>" "<=" "=<<" "=/=" ">-" ">=" ">=>" ">>" ">>-"
+                            ">>=" ">>>" "<*" "<*>" "<|" "<|>" "<$" "<$>"
+                            "<!--" "<-" "<--" "<->" "<+" "<+>" "<=" "<=="
+                            "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<" "<~"
+                            "<~~" "</" "</>" "~@" "~-" "~>" "~~" "~~>" "%%"))
+  (global-ligature-mode t))
+;; Editor Enhancements:1 ends here
+
+;; [[file:readme.org::*Emacs Core][Emacs Core:1]]
+(electric-indent-mode 1)
+(electric-pair-mode 1)
+(save-place-mode 1)
+(savehist-mode 1)
+(recentf-mode 1)
+
+(use-package dired
+  :config (setq dired-listing-switches "-agho --group-directories-first"))
+
+(use-package diredfl
+  :hook (dired-mode . diredfl-mode))
+
+(use-package nerd-icons-dired
+  :hook (dired-mode . nerd-icons-dired-mode))
+
+(use-package ibuffer
+  :bind ("C-x C-b" . ibuffer))
+
+(use-package ibuffer-vc
+  :hook (ibuffer . ibuffer-vc-set-filter-groups-by-vc-root))
+
+(use-package tramp
+  :config (setq tramp-default-method "ssh"))
+
+(use-package vundo
+  :commands vundo)
+;; Emacs Core:1 ends here
+
+;; [[file:readme.org::*Tools & Checkers][Tools & Checkers:1]]
+(use-package magit
+  :bind ("C-x g" . magit-status))
+
+(use-package vterm
+  :commands vterm)
+
+(use-package editorconfig
+  :hook (after-init . editorconfig-mode))
+
+(use-package flycheck
+  :hook (prog-mode . flycheck-mode))
+
+(use-package flyspell
+  :hook ((text-mode . flyspell-mode)
+         (prog-mode . flyspell-prog-mode)))
+
+(use-package langtool
+  :commands langtool-check)
+
+(use-package docker
+  :commands docker)
+
+(use-package quickrun
+  :commands quickrun)
+
+(use-package dumb-jump
+  :config (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
+
+(use-package pass
+  :commands pass)
+
+(use-package citar
+  :commands citar-insert-citation)
+
+(use-package treesit-auto
+  :config (global-treesit-auto-mode 1))
+;; Tools & Checkers:1 ends here
+
+;; [[file:readme.org::*Languages][Languages:1]]
+;; --- Python (with UV & Pyrefly) ---
+(defvar my/pyrefly-executable
+  (or (executable-find "pyrefly")
+      (expand-file-name "~/.local/bin/pyrefly"))
+  "Path to the pyrefly executable.")
+
+;; for ~let*~
+(require 'subr-x)
+
+(defun my/python-uv-activate ()
+  "Activate .venv from the current project root, if present."
+  (let* ((root (or (when (fboundp 'project-root)
+                     (project-root (project-current)))
+                   (locate-dominating-file default-directory ".venv")
+                   (locate-dominating-file default-directory "pyproject.toml")))
+         (venv (and root (expand-file-name ".venv" root)))
+         (python (and venv
+                      (expand-file-name
+                       (if (eq system-type 'windows-nt)
+                           "Scripts/python.exe"
+                         "bin/python")
+                       venv))))
+    (when (and python (file-exists-p python))
+      (setq-local python-shell-interpreter python)
+      (let ((venv-bin (file-name-directory python)))
+        (setq-local exec-path (cons venv-bin (remove venv-bin exec-path)))
+        (setenv "PATH" (concat venv-bin path-separator (getenv "PATH"))))
+      (setenv "VIRTUAL_ENV" venv)
+      (setenv "PYTHONHOME" nil))))
+
+(use-package python
+  :mode ("\\.py\\'" . python-ts-mode)
+  :hook ((python-mode python-ts-mode) . my/python-uv-activate)
+  :config
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs
+                 `((python-mode python-ts-mode) . (,my/pyrefly-executable "lsp")))))
+
+(use-package go-mode
+  :mode "\\.go\\'"
+  :hook (go-mode . eglot-ensure))
+
+;; Prefer rustic (already in your Guix manifest) over plain rust-ts-mode
+(use-package rustic
+  :mode ("\\.rs\\'" . rustic-mode)
+  :custom
+  (rustic-lsp-client 'eglot)
+  :hook (rustic-mode . eglot-ensure))
+
+(use-package c-ts-mode
+  :mode ("\\.c\\'" . c-ts-mode)
+  :mode ("\\.h\\'" . c-ts-mode)
+  :mode ("\\.cpp\\'" . c++-ts-mode)
+  :hook ((c-ts-mode c++-ts-mode) . eglot-ensure))
+
+(use-package web-mode
+  :mode "\\.html?\\'"
+  :mode "\\.jsx?\\'"
+  :mode "\\.tsx?\\'")
+
+(use-package yaml-mode
+  :mode "\\.ya?ml\\'")
+
+(use-package markdown-mode
+  :mode "\\.md\\'")
+
+(use-package org
+  :hook (org-mode . org-indent-mode)
+  :config (setq org-startup-indented t))
+
+(use-package org-modern
+  :hook (org-mode . org-modern-mode))
+
+(use-package tex
+  :mode "\\.tex\\'")
+
+(use-package geiser-guile
+  :mode "\\.scm\\'")
+
+(add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
+;; Languages:1 ends here
+
+;; [[file:readme.org::*Apps (RSS)][Apps (RSS):1]]
+(use-package elfeed :commands elfeed)
+(use-package elfeed-org :config (elfeed-org))
+;; Apps (RSS):1 ends here
+
+;; [[file:readme.org::*Finalization][Finalization:1]]
+(global-auto-revert-mode 1)
+(setq global-auto-revert-non-file-buffers t
+      auto-revert-verbose nil)
+;; Finalization:1 ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
