@@ -53,4 +53,14 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
 
-(package! kanagawa-themes)
+(package! rainbow-delimiters)
+(package! ligature)
+(package! ox-tufte)
+(unpin! org-roam)
+(package! org-roam-ui)
+(package! telega
+  :recipe (:host github
+           :repo "zevlg/telega.el"
+           :branch "master"
+           :files (:defaults "contrib" "etc" "server" "Makefile")))
+(package! circe)
