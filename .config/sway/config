@@ -14,12 +14,12 @@ set $right l
 # Your preferred web browser
 set $browser MOZ_ENABLE_WAYLAND=1 firefox
 # Your preferred terminal emulator
-set $term st
-set $secterm kitty
+set $term kitty
+
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
-set $menu dmenu_run | xargs swaymsg exec --
+set $menu /home/komeil/.config/bemenu/bemenu.sh
 
 # i3status-rs config path 
 set $i3statusrs_config ~/.config/i3status-rs/config.toml
@@ -34,6 +34,9 @@ set $second_lang ir
 # output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 exec ~/.azotebg
 
+
+font pango:JetBrainsMono Nerd Font 9
+#
 #
 # Example configuration:
 #
@@ -47,10 +50,7 @@ exec ~/.azotebg
 # Example configuration:
 #
 
-# didnt accpet passwords
-
 exec swayidle -w \
-         timeout 300 'swaylock -f -c 000000' \
          timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"' \
          before-sleep 'swaylock -f -c 000000'
 
@@ -89,7 +89,7 @@ input * {
     # xkb_variant "colemak,,typewriter"
     
     # keyboard options
-    xkb_options "grp:switch,grp_led:scroll,grp:alt_shift_toggle"
+    xkb_options "grp:switch,grp_led:scroll,grp:caps_toggle"
 
     xkb_model "pc105"
     #
@@ -97,8 +97,8 @@ input * {
     #
     # 300s repeat delay
     repeat_delay 300
-    # 30s repeat rate
-    repeat_rate 30
+    # 50s repeat rate
+    repeat_rate 50
 }
 
 # enable Initially enable CapsLock/NumLock
@@ -113,7 +113,6 @@ input type:keyboard xkb_numlock enabled
 #
     # Start a terminal
     bindsym Mod4+Return exec $term
-    bindsym Mod4+Shift+Return exec $secterm
 
     # Kill focused window
     bindsym Mod4+Shift+c kill
@@ -270,10 +269,8 @@ bindsym XF86AudioPrev exec playerctl previous
 exec wl-paste -t text --watch clipman store --max-items=60 --histpath="~/.local/share/clipman.json"
 bindsym Mod4+Shift+v exec clipman pick --tool="wofi" --max-items=30 --histpath="~/.local/share/clipman.json"
 
-#
 # colour picker
 #
-bindsym Mod4+Shift+z exec wl-color-picker
 # Screenshot bindkeys
 # path: $HOME/Pictures/Screenshots/
 #
@@ -394,17 +391,6 @@ bar {
     #            right, bottom, and left or per direction with horizontal and
     #            vertical.
     #gaps inner 10
-# swayfx
-    blur_radius 3
-    blur_passes 1
-    blur enable
-    shadows disable
-layer_effects "i3status-rs" {
-    blur enable;
-    blur_xray enable;
-    blur_ignore_transparent enable;
-    shadows enable;
-    corner_radius 20;
 }
 # for more information, see https://wiki.archlinux.org/title/Wayland#XWayland
 # Note: Nvidia drivers prior to version 470 (e.g. nvidia-390xx-dkmsAUR) do not
@@ -423,6 +409,7 @@ layer_effects "i3status-rs" {
 # pipewire startup
 exec pipewire
 exec pipewire-pulse
+exec wireplumber
 
 # pulseaudio startyp
 #exec pulseaudio --daemonize=no --exit-idle-time=-1
@@ -438,7 +425,7 @@ exec pipewire-pulse
     #    orkspace has more than one visible child. If smart_borders is
     #   s et to no_gaps, borders will only be enabled if the workspace
     #   a s more than one visible child and gaps equal to zero.
-    smart_borders o
+    smart_borders on
 
 # Mako is direct and easy to use, so I use it if you  want to use
 # another notification-daemon, see https://wiki.archlinux.org/title/Desktop_notifications
