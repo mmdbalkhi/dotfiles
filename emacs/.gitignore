@@ -1,5 +1,7 @@
-*
+!./themes/
+!load.d
 !.gitignore
 !readme.org
 !init.el
 !early-init.el
+*
