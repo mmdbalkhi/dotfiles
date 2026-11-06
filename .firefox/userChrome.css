@@ -7,10 +7,9 @@
 	 */
 	#main-window body { flex-direction: column-reverse !important; }
 	#navigator-toolbox { flex-direction: column-reverse !important; }
-	#urlbar-searchmode-switcher { position: static !important; }
+	.searchmode-switcher { position: static !important; }
 	#urlbar {
 		top: unset !important;
-		bottom: calc(var(--urlbar-container-height) + 2 * var(--urlbar-padding-block)) !important;
 		box-shadow: none !important;
 		display: flex !important;
 		flex-direction: column !important;
@@ -21,9 +20,26 @@
 	#urlbar .urlbar-input-container {
 		order: 2;
 	}
+	#urlbar .urlbar-background {
+		.urlbar[popover-open] > & {
+			border-radius: 0;
+			inset-block-start: calc(-1 * var(--urlbar-joint-background-overlap));
+			inset-block-end: 0;
+		}
+	}
+	#urlbar > .urlbarView-background {
+		border-radius: 0;
+	}
 	#urlbar > .urlbarView {
 		order: 1;
-		border-bottom: 1px solid #666;
+		&:popover-open {
+			border-bottom: 1px solid #666 !important;
+			margin-bottom: .1em !important;
+			overflow-x: hidden !important;
+			position-area: block-start center !important;
+			padding-block-end: var(--urlbarView-padding) !important;
+			padding-block-start: 0 !important;
+		}
 	}
 	#urlbar-results {
 		display: flex;
@@ -61,13 +77,8 @@
 	#mainPopupSet panel.panel-no-padding { margin-top: calc(-50vh + 40px) !important; }
 	#mainPopupSet .panel-viewstack, #mainPopupSet popupnotification { max-height: 50vh !important; height: 50vh; }
 	#mainPopupSet panel.panel-no-padding.popup-notification-panel { margin-top: calc(-50vh - 35px) !important; }	
-	/* Fix Screen Share / Permission panels going under bottom toolbar */
-	#mainPopupSet panel.popup-notification-panel {
-		margin-top: unset !important;
-		margin-bottom: calc(var(--toolbar-height, 40px) + 8px) !important;
-		max-height: 50vh !important;
-	}
 	#navigator-toolbox .panel-viewstack { max-height: 75vh !important; }
 	panelview.cui-widget-panelview { flex: 1; }
 	panelview.cui-widget-panelview > vbox { flex: 1; min-height: 50vh; }
 }
+
