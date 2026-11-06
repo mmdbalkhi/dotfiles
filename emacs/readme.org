@@ -2,7 +2,7 @@
 #+AUTHOR: Komeil Parseh
 #+EMAIL: komeilparseh@disroot.org
 #+STARTUP: show3levels
-#+OPTIONS: auto-id:t broken-links:t tags:nil
+#+OPTIONS: auto-id:t broken-links:t tags:nil toc:t
 #+PROPERTY: header-args:emacs-lisp :tangle init.el :comments link :mkdirp yes
 
 * Overview
@@ -291,6 +291,37 @@ Set =my/start-server= to nil to turn that off.
 (add-hook 'find-file-hook #'my/large-file-setup)
 #+END_SRC
 
+** Clipboard
+:PROPERTIES:
+:CUSTOM_ID: h-b86876f7
+:END:
+This is based on wl-clipboard.
+
+#+begin_src emacs-lisp
+;; Enable system clipboard integration
+(setq select-enable-clipboard t)
+
+;; Use wl-clipboard for seamless Wayland copy/paste
+(when (executable-find "wl-copy")
+  (defun my/wl-copy (text &optional push)
+    "Copy TEXT to the Wayland clipboard using wl-copy."
+    (with-temp-buffer
+      (insert text)
+      ;; -n prevents adding an unwanted trailing newline
+      (call-process-region (point-min) (point-max) "wl-copy" nil nil nil "-n")))
+  
+  (defun my/wl-paste ()
+    "Paste text from the Wayland clipboard using wl-paste."
+    (let ((text (shell-command-to-string "wl-paste")))
+      (when (and text (> (length text) 0))
+        ;; Strip trailing newline for cleaner pasting
+        (if (string-suffix-p "\n" text)
+            (substring text 0 -1)
+          text))))
+  
+  (setq interprogram-cut-function #'my/wl-copy)
+  (setq interprogram-paste-function #'my/wl-paste))
+#+end_src
 * UI
 :PROPERTIES:
 :CUSTOM_ID: h-cef81421
@@ -305,11 +336,13 @@ Fonts are applied per frame, so they also work for =emacsclient -c= frames under
 (where no graphical frame exists at startup).
 
 #+BEGIN_SRC emacs-lisp
-;; Emacs 31 Rendering Enhancements
-(setq x-underline-at-descent-line t      ; Beautiful underlines
-      x-use-underline-position-properties t
-      font-lock-maximum-decoration t
-      bidi-paragraph-direction 'left-to-right) ; Crucial for fast rendering
+  ;; Emacs 31 Rendering Enhancements
+  (setopt line-spacing 0.15)
+  (setq x-underline-at-descent-line t      ; Beautiful underlines
+        x-use-underline-position-properties t
+        font-lock-maximum-decoration t
+        bidi-paragraph-direction 'left-to-right   ; Crucial for fast rendering
+        inhibit-compacting-font-caches t)         ; avoids stutter with large icon fonts
 
 (setq-default line-spacing 0.15)
 
@@ -337,6 +370,21 @@ Fonts are applied per frame, so they also work for =emacsclient -c= frames under
 :PROPERTIES:
 :CUSTOM_ID: h-a33332db
 :END:
+*** org
+:PROPERTIES:
+:CUSTOM_ID: h-ace9c794
+:END:
+
+Set these /before/ the theme is loaded (Modus options are read at load time):
+#+begin_src emacs-lisp
+(setopt modus-themes-mixed-fonts t)
+(setopt modus-themes-headings '((t . (variable-pitch))))
+#+end_src
+
+*** Theme
+:PROPERTIES:
+:CUSTOM_ID: h-3e1503be
+:END:
 I use [[https://github.com/mmdbalkhi/persian-landscapes][persian-landscapes-themes ]]based on the Modus.
 
 #+BEGIN_SRC emacs-lisp
@@ -359,362 +407,145 @@ I use [[https://github.com/mmdbalkhi/persian-landscapes][persian-landscapes-them
 A calm, academic-oriented startup screen. Built on the =dashboard= package
 with custom sections. All colours inherit from Modus themes.
 
-**** Package and core settings
-:PROPERTIES:
-:CUSTOM_ID: h-09d5961d
-:END:
-#+BEGIN_SRC emacs-lisp :tangle init.el
-  (use-package dashboard
-    :demand t
-    :custom
-    (dashboard-startup-banner "λ")
-    (dashboard-center-content t)
-    (dashboard-vertically-center-content nil)
-    (dashboard-set-navigator t)
-    (dashboard-set-heading-icons nil)
-    (dashboard-set-file-icons nil)
-    (dashboard-set-init-info t)
-    (dashboard-show-shortcuts t)
-    (dashboard-page-separator "\n")
-    (dashboard-set-footer nil)                ; no quotes for now (saves space)
-    (dashboard-items '((agenda    . 4)
-                       (todos     . 4)
-                       (projects  . 3)
-                       (bookmarks . 3)
-                       (recents   . 5)
-                       (reading   . 3)
-                       (elfeed    . 3)))
-    :config
-    ;; ------------------------------------------------------------
-    ;; Faces
-    ;; ------------------------------------------------------------
-    (defface my/dashboard-heading
-      '((t :inherit (font-lock-keyword-face bold)))
-      "Section headings.")
-    (defface my/dashboard-text
-      '((t :inherit default))
-      "Normal text.")
-    (defface my/dashboard-muted
-      '((t :inherit shadow))
-      "Secondary text.")
-    (defface my/dashboard-banner
-      '((t :inherit (font-lock-constant-face bold) :height 1.25))
-      "Main banner.")
-
-    (custom-set-faces
-     '(dashboard-heading       ((t :inherit my/dashboard-heading)))
-     '(dashboard-items-face    ((t :inherit my/dashboard-text)))
-     '(dashboard-no-items-face ((t :inherit my/dashboard-muted))))
-
-    ;; ------------------------------------------------------------
-    ;; Header
-    ;; ------------------------------------------------------------
-    (setq dashboard-banner-logo-title
-          (concat
-           (propertize "λ  " 'face 'my/dashboard-banner)
-           (propertize "Komeil Parseh" 'face 'my/dashboard-heading)
-           "   "
-           (propertize (format-time-string "%A · %d %B %Y")
-                       'face 'my/dashboard-muted)))
-
-    ;; ------------------------------------------------------------
-    ;; Navigator
-    ;; ------------------------------------------------------------
-    (setq dashboard-navigator-buttons
-          `(((nil "Agenda"  "Org Agenda"  (lambda (&rest _) (org-agenda nil "a")))
-             (nil "Capture" "Org Capture" (lambda (&rest _) (org-capture)))
-             (nil "Notes"   "Org Roam"    (lambda (&rest _) (org-roam-node-find)))
-             (nil "Elfeed"  "Elfeed"      (lambda (&rest _) (elfeed)))
-             (nil "Refresh" "Refresh"     (lambda (&rest _) (dashboard-refresh-buffer))))))
-
-    ;; ------------------------------------------------------------
-    ;; Priority TODOs
-    ;; ------------------------------------------------------------
-    (defun my/dashboard-todos (list-size)
-      (dashboard-insert-heading "Priority Tasks")
-      (let* ((todos (org-map-entries
-                     (lambda ()
-                       (list :heading  (org-get-heading t t t t)
-                             :priority (org-get-priority (org-get-heading))
-                             :file     (buffer-file-name)
-                             :marker   (point-marker)))
-                     "TODO=\"TODO\"|TODO=\"NEXT\"|PRIORITY>=\"B\""
-                     'agenda))
-             (sorted (seq-take (seq-sort-by (lambda (x) (plist-get x :priority)) #'> todos)
-                               list-size)))
-        (if (null sorted)
-            (insert (propertize "  No high-priority tasks.\n" 'face 'my/dashboard-muted))
-          (dolist (item sorted)
-            (let ((heading (plist-get item :heading))
-                  (file    (plist-get item :file))
-                  (marker  (plist-get item :marker)))
-              (insert (dashboard-button
-                       (format "  • %s" (truncate-string-to-width heading 70 nil nil "…"))
-                       (lambda (_)
-                         (when (and file (file-exists-p file))
-                           (find-file file)
-                           (goto-char marker)))
-                       file
-                       'my/dashboard-text))
-              (insert "\n"))))))
-
-    ;; ------------------------------------------------------------
-    ;; Reading list
-    ;; ------------------------------------------------------------
-    (defvar my/reading-list
-      '(("Category Theory in Context"      . "Riehl")
-        ("Software Foundations Vol. 1"     . "Pierce et al.")
-        ("Types and Programming Languages" . "Pierce")
-        ("Practical Foundations for PT"    . "Harper"))
-      "Edit this list freely.")
-
-    (defun my/dashboard-reading (list-size)
-      (dashboard-insert-heading "Currently Reading")
-      (let ((entries (seq-take my/reading-list list-size)))
-        (if (null entries)
-            (insert (propertize "  (empty)\n" 'face 'my/dashboard-muted))
-          (dolist (entry entries)
-            (insert (format "  • %s  %s\n"
-                            (propertize (car entry) 'face 'my/dashboard-text)
-                            (propertize (format "(%s)" (cdr entry))
-                                        'face 'my/dashboard-muted)))))))
-
-    ;; ------------------------------------------------------------
-    ;; Elfeed (simple + safe)
-    ;; ------------------------------------------------------------
-    (defun my/dashboard-elfeed (list-size)
-      (dashboard-insert-heading "Unread Articles")
-      (if (not (featurep 'elfeed))
-          (insert (propertize "  Elfeed not loaded.\n" 'face 'my/dashboard-muted))
-        (let ((entries
-               (seq-take
-                (cl-remove-if-not (lambda (e) (elfeed-tagged-p 'unread e))
-                                  (elfeed-search-entries))
-                list-size)))
-          (if (null entries)
-              (insert (propertize "  No unread articles.\n" 'face 'my/dashboard-muted))
-            (dolist (e entries)
-              (let ((title (elfeed-entry-title e))
-                    (feed  (elfeed-feed-title (elfeed-entry-feed e)))
-                    (link  (elfeed-entry-link e)))
-                (insert (dashboard-button
-                         (format "  • %s" (truncate-string-to-width title 55 nil nil "…"))
-                         (lambda (_) (when link (browse-url link)))
-                         link
-                         'my/dashboard-text))
-                (insert (propertize (format "  (%s)\n" feed)
-                                    'face 'my/dashboard-muted))))))))
-
-    ;; ------------------------------------------------------------
-    ;; Register custom sections
-    ;; ------------------------------------------------------------
-    (add-to-list 'dashboard-item-generators '(todos   . my/dashboard-todos))
-    (add-to-list 'dashboard-item-generators '(reading . my/dashboard-reading))
-    (add-to-list 'dashboard-item-generators '(elfeed  . my/dashboard-elfeed))
-
-    (setq dashboard-week-agenda t
-          dashboard-agenda-sort-strategy '(priority-up time-up)
-          dashboard-projects-backend 'project-el
-          dashboard-projects-switch-function #'project-switch-project)
-
-    ;; ------------------------------------------------------------
-    ;; Startup
-    ;; ------------------------------------------------------------
-    (dashboard-setup-startup-hook)
-
-    ;; Local keys
-    (define-key dashboard-mode-map (kbd "r") #'dashboard-refresh-buffer)
-    (define-key dashboard-mode-map (kbd "a") (lambda () (interactive) (org-agenda nil "a")))
-    (define-key dashboard-mode-map (kbd "c") #'org-capture)
-    (define-key dashboard-mode-map (kbd "e") #'elfeed)
-    (define-key dashboard-mode-map (kbd "n") #'org-roam-node-find)
-    (define-key dashboard-mode-map (kbd "q") #'bury-buffer))
-#+END_SRC
-
-**Open dashboard on demand**
-#+BEGIN_SRC emacs-lisp :tangle init.el
-(defun my/open-dashboard ()
-  "Open or refresh the personal dashboard."
-  (interactive)
-  (dashboard-open))
+#+BEGIN_SRC emacs-lisp
+(defvar my/reading-list
+  '(("Category Theory in Context"      . "Riehl")
+    ("Software Foundations, Vol. 1"    . "Pierce et al.")
+    ("Types and Programming Languages" . "Pierce")
+    ("Practical Foundations for PL"    . "Harper"))
+  "Books shown in the dashboard's reading section.  Edit freely.")
+ 
+(defun my/dashboard-reading (list-size)
+  "Insert up to LIST-SIZE entries of `my/reading-list'."
+  (dashboard-insert-heading "Currently Reading")
+  (insert "\n")
+  (dolist (book (seq-take my/reading-list list-size))
+    (insert "    " (car book)
+            (propertize (format "  (%s)" (cdr book)) 'face 'shadow)
+            "\n")))
+ 
+(use-package dashboard
+  :ensure t
+  :demand t
+  :custom
+  (dashboard-startup-banner 'ascii)
+  (dashboard-banner-ascii "λ")
+  (dashboard-banner-logo-title "Komeil Parseh")
+  (dashboard-init-info (lambda () (format-time-string "%A · %d %B %Y")))
+  (dashboard-center-content t)
+  (dashboard-startupify-list
+   '(dashboard-insert-banner
+     dashboard-insert-newline
+     dashboard-insert-banner-title
+     dashboard-insert-newline
+     dashboard-insert-navigator
+     dashboard-insert-newline
+     dashboard-insert-init-info
+     dashboard-insert-items))
+  (dashboard-projects-backend 'project-el)
+  (dashboard-items '((agenda . 5) (recents . 6) (projects . 5)
+                     (bookmarks . 3) (reading . 4)))
+  (dashboard-navigator-buttons
+   '(((nil "Agenda" "Org agenda" (lambda (&rest _) (org-agenda nil "a")))
+      (nil "Notes"  "Org-roam"   (lambda (&rest _) (org-roam-node-find)))
+      (nil "Feeds"  "Elfeed"     (lambda (&rest _) (elfeed))))))
+  :custom-face
+  (dashboard-text-banner       ((t (:inherit font-lock-keyword-face :height 3.0))))
+  (dashboard-banner-logo-title ((t (:inherit font-lock-constant-face :weight bold :height 1.3))))
+  (dashboard-heading           ((t (:inherit font-lock-function-name-face :weight bold))))
+  :config
+  (add-to-list 'dashboard-item-generators '(reading . my/dashboard-reading))
+  (dashboard-setup-startup-hook))
 #+END_SRC
 
 *** Modeline 
 :PROPERTIES:
-:CUSTOM_ID: h-34941992
+:CUSTOM_ID: h-c21db571
 :END:
+
 #+BEGIN_SRC emacs-lisp
-    ;; ── 1. Silence noisy minor modes ──
-    (use-package diminish
-      :ensure t
-      :demand t
-      :config
-      (diminish 'beacon-mode)
-      (diminish 'vi-tilde-fringe-mode)
-      (diminish 'ws-butler-mode)
-      (diminish 'yas-minor-mode)
-      (diminish 'which-key-mode)
-      (diminish 'eldoc-mode)
-      (diminish 'auto-revert-mode)
-      (diminish 'outline-minor-mode)
-      (diminish 'visual-line-mode))
-
-    ;; ── 2. Language version (Uses project venv, cached) ──
-    (defvar-local my/lang-version-cache nil
-      "Cache for the modeline language version so it only runs once per buffer.")
-
-    (defun my/modeline-lang-version ()
-      "Return language name + version, checking project venvs first."
-      (or my/lang-version-cache
-          (setq my/lang-version-cache
-                (cond
-                 ;; PYTHON: Use python-shell-interpreter (set by uv/venv activator)
-                 ((derived-mode-p 'python-mode 'python-ts-mode 'python-base-mode)
-                  (condition-case nil
-                      (let* ((py-exe (or (bound-and-true-p python-shell-interpreter) 
-                                         "python3"))
-                             (out (and (file-executable-p py-exe)
-                                       (shell-command-to-string 
-                                        (format "%s --version 2>&1" py-exe))))
-                             (ver (and out
-                                       (string-match "Python \\([0-9.]+\\)" out)
-                                       (match-string 1 out))))
-                        (if ver (concat "Py " ver) "Py ?"))
-                    (error "Py ?")))
-                 
-                 ;; RUST
-                 ((derived-mode-p 'rustic-mode 'rust-ts-mode 'rust-mode)
-                  (condition-case nil
-                      (let ((out (shell-command-to-string "rustc --version 2>&1")))
-                        (if (string-match "rustc \\([0-9.]+\\)" out)
-                            (concat "Rust " (match-string 1 out))
-                          "Rust"))
-                    (error "Rust")))
-                    
-                 ;; GO
-                 ((derived-mode-p 'go-mode 'go-ts-mode)
-                  (condition-case nil
-                      (let ((out (shell-command-to-string "go version 2>&1")))
-                        (if (string-match "go\\([0-9.]+\\)" out)
-                            (concat "Go " (match-string 1 out))
-                          "Go"))
-                    (error "Go")))
-                    
-                 ;; FALLBACK
-                 (t (format-mode-line mode-name))))))
-
-    ;; ── 3. Git branch helper (robust parsing) ──
-    (defvar-local my/branch-cache nil
-      "Cache for git branch to avoid re-parsing on every redraw.")
-
-    (defun my/modeline-branch ()
-      "Return just the branch name from vc-mode."
-      (or my/branch-cache
-          (setq my/branch-cache
-                (when vc-mode
-                  (let* ((raw (string-trim-left vc-mode))
-                         (after-colon (if (string-match ":" raw)
-                                          (substring raw (match-end 0))
-                                        raw)))
-                    (string-trim-right after-colon "\\*"))))))
-
-    ;; ── 4. Full file path ──
-    (defun my/modeline-full-path ()
-      "Return the full file path (abbreviated with ~)."
-      (if buffer-file-name
-          (abbreviate-file-name buffer-file-name)
-        (buffer-name)))
-
-  ;; ── 5. Verbose Flymake diagnostic counter (FIXED) ──
-  (defun my/modeline-flymake ()
-    "Return verbose Flymake diagnostic counts using public API."
-    (when (bound-and-true-p flymake-mode)
-      (condition-case nil
-          (let* (;; Try public API first, then internal variable
-                 (diags (cond
-                         ((fboundp 'flymake-diagnostics)
-                          (flymake-diagnostics))
-                         ((boundp 'flymake--diagnostics)
-                          flymake--diagnostics)
-                         (t nil)))
-                 (err 0) (warn 0) (note 0))
-            (when (listp diags)
-              (dolist (diag diags)
-                (let ((type (condition-case nil
-                                (flymake-diagnostic-type diag)
-                              (error
-                               ;; Fallback: diagnostics are vectors, type at index 2
-                               (and (vectorp diag) (aref diag 2))))))
-                  (pcase type
-                    (:error   (cl-incf err))
-                    (:warning (cl-incf warn))
-                    (:note    (cl-incf note))
-                    (_        (cl-incf note))))))
-            (if (or (> err 0) (> warn 0) (> note 0))
-                (format "E:%d W:%d N:%d" err warn note)
-              "✓"))
-        (error "✓"))))
-
-    ;; ── 6. DYNAMIC width calculator for the right side ──
-    (defun my/modeline-right-reserve ()
-      "Calculate the exact character width of the right-side content."
-      (let* ((flymake-str (or (my/modeline-flymake) ""))
-             (lang-str (my/modeline-lang-version))
-             (flymake-width (string-width flymake-str))
-             (lang-width (string-width lang-str))
-             ;; +4 for the spaces between elements
-             (total (+ flymake-width 4 lang-width)))
-        (max total 10)))
-
-    ;; ── 7. The modeline layout ──
-    (setq-default mode-line-format
-      '("%e" ;; Standard error/abort space (required by Emacs)
-        
-        ;; ── LEFT SIDE (Flush) ──
-        
-        ;; 1. Modified indicator
-        (:eval (cond (buffer-read-only (propertize " RO " 'face 'error))
-                     ((buffer-modified-p) (propertize " * " 'face 'warning))
-                     (t (propertize " - " 'face 'shadow))))
-        
-        ;; 2. Git branch
-        (:eval (when-let* ((b (my/modeline-branch)))
-                 (propertize (concat b ":") 'face 'font-lock-doc-face)))
-        
-        ;; 3. FULL FILE PATH (instead of just filename)
-        (:eval (propertize (my/modeline-full-path) 'face 'mode-line-buffer-id))
-        
-        ;; 4. Location
-        (:eval (propertize (format ":%d" (line-number-at-pos)) 'face 'shadow))
-
-        ;; ── DYNAMIC BIG SPACE ──
-        (:eval (propertize " " 
-                           'display 
-                           `(space :align-to (- right 
-                                                ,(my/modeline-right-reserve)))))
-        
-        ;; ── RIGHT SIDE ──
-        
-        ;; Verbose Flymake diagnostics (E:2 W:1 N:0 or ✓)
-        (:eval (when-let* ((f (my/modeline-flymake)))
-                 (propertize f 'face (if (string= f "✓")
-                                         'success
-                                       'font-lock-warning-face))))
-        "   "
-        
-        ;; Language + version
-        (:eval (propertize (my/modeline-lang-version) 'face 'font-lock-type-face))
-        
-        mode-line-end-spaces))
-
-    ;; Enable line numbers for the position segment
-    (line-number-mode 1)
-    (column-number-mode 1)
-
-    ;; Clean look: remove 3D box borders
-    (set-face-attribute 'mode-line nil :box nil)
-    (set-face-attribute 'mode-line-inactive nil :box nil)
+(defvar-local my/lang-version nil
+  "Propertized language version string for the mode line, e.g. \"Py 3.12.3\".")
+ 
+(defvar my/lang-version-cache (make-hash-table :test 'equal)
+  "Cache of (EXECUTABLE . DIRECTORY) -> version string.")
+ 
+(defun my/lang-version--spec ()
+  "Return (LABEL EXECUTABLE . ARGS) for the current buffer's language, or nil."
+  (cond ((derived-mode-p 'python-base-mode)
+         (list "Py" (or (executable-find python-shell-interpreter)
+                        (executable-find "python3"))
+               "--version"))
+        ((derived-mode-p 'rust-ts-mode 'rustic-mode 'rust-mode)
+         (list "Rust" (executable-find "cargo") "--version"))
+        ((derived-mode-p 'go-ts-mode 'go-mode)
+         (list "Go" (executable-find "go") "version"))
+        ((derived-mode-p 'js-base-mode 'typescript-ts-mode 'tsx-ts-mode)
+         (list "Node" (executable-find "node") "--version"))))
+ 
+(defun my/lang-version--run (exe args)
+  "Run EXE with ARGS and return the first x.y[.z] number in its output."
+  (with-temp-buffer
+    (when (zerop (apply #'call-process exe nil t nil args))
+      (goto-char (point-min))
+      (when (re-search-forward "[0-9]+\\(?:\\.[0-9]+\\)+" nil t)
+        (match-string 0)))))
+ 
+(defun my/lang-version-update ()
+  "Set `my/lang-version' for this buffer (runs once per mode change)."
+  (interactive)
+  (setq my/lang-version
+        (when-let* (((not (file-remote-p default-directory)))
+                    (spec (my/lang-version--spec))
+                    (exe  (cadr spec))
+                    (key  (cons exe default-directory))
+                    (ver  (or (gethash key my/lang-version-cache)
+                              (puthash key (my/lang-version--run exe (cddr spec))
+                                       my/lang-version-cache))))
+          (propertize (format "%s %s" (car spec) ver) 'face 'font-lock-type-face))))
+ 
+(add-hook 'after-change-major-mode-hook #'my/lang-version-update)
+ 
+(defun my/ml-branch ()
+  "Return the VC branch name for the mode line, or nil."
+  (when (stringp vc-mode)
+    (propertize
+     (concat (replace-regexp-in-string "\\` *[[:alpha:]]+[-:@!?\\^]" ""
+                                       (substring-no-properties vc-mode))
+             " ")
+     'face 'font-lock-doc-face)))
+ 
+(defun my/ml-path ()
+  "Return the abbreviated file path (or buffer name), truncated on the left."
+  (propertize (string-truncate-left
+               (if buffer-file-name (abbreviate-file-name buffer-file-name) (buffer-name))
+               60)
+              'face 'mode-line-buffer-id))
+ 
+(defun my/ml-lsp ()
+  "Return \" LSP\" when Eglot is connected in this buffer."
+  (when (and (featurep 'eglot) (eglot-managed-p) (eglot-current-server))
+    (propertize " LSP" 'face 'success)))
+ 
+(setq-default
+ mode-line-format
+ '("%e" evil-mode-line-tag mode-line-modified " "
+   (:eval (my/ml-branch)) (:eval (my/ml-path)) " %l:%c"
+   mode-line-format-right-align
+   (:eval (my/ml-lsp))
+   (flymake-mode flymake-mode-line-format)
+   (my/lang-version (" " my/lang-version) (" " mode-name))
+   mode-line-end-spaces))
 #+END_SRC
+ 
+Borderless mode line (put it /before/ the =load-theme= call):
+ 
+#+BEGIN_SRC emacs-lisp
+(setopt modus-themes-common-palette-overrides
+        '((border-mode-line-active   unspecified)
+          (border-mode-line-inactive unspecified)))
+#+END_SRC
+
 ** Code and text decoration
 :PROPERTIES:
 :CUSTOM_ID: h-ffa8a174
@@ -1074,44 +905,58 @@ Vertico, Orderless, Marginalia and Consult handle the minibuffer; Corfu and Cape
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(use-package evil-collection
-  :demand t
-  :after evil
-  :custom
-  (evil-collection-setup-minibuffer t)
-  (evil-collection-want-unimpaired-p t)
-  :config
-  ;; Make sure dired is NOT in the removal list
-  (setq evil-collection-mode-list (remove 'telega evil-collection-mode-list))
-  (evil-collection-init))
-  (use-package evil-commentary           ; gcc / gc
-    :demand t :after evil
-    :config (evil-commentary-mode 1))
+    (use-package evil-collection
+      :demand t
+      :after evil
+      :custom
+      (evil-collection-setup-minibuffer t)
+      (evil-collection-want-unimpaired-p t)
+      :config
+      ;; Make sure dired is NOT in the removal list
+      (setq evil-collection-mode-list (remove 'telega evil-collection-mode-list))
+      (evil-collection-init))
+      (use-package evil-commentary           ; gcc / gc
+        :demand t :after evil
+        :config (evil-commentary-mode 1))
 
-  (use-package evil-surround             ; ys / cs / ds
-    :demand t :after evil
-    :config (global-evil-surround-mode 1))
+      (use-package evil-surround             ; ys / cs / ds
+        :demand t :after evil
+        :config (global-evil-surround-mode 1))
 
-  (use-package evil-exchange             ; gx
-    :demand t :after evil
-    :config (evil-exchange-install))
+      (use-package evil-exchange             ; gx
+        :demand t :after evil
+        :config (evil-exchange-install))
 
-  (use-package evil-matchit              ; better %
-    :demand t :after evil
-    :config (global-evil-matchit-mode 1))
+      (use-package evil-matchit              ; better %
+        :demand t :after evil
+        :config (global-evil-matchit-mode 1))
 
-  (use-package evil-visualstar           ; * and # in visual state
-    :demand t :after evil
-    :config (global-evil-visualstar-mode 1))
+      (use-package evil-visualstar           ; * and # in visual state
+        :demand t :after evil
+        :config (global-evil-visualstar-mode 1))
 
-  (use-package evil-numbers              ; increment / decrement number at point
-    :after evil
-    :bind (:map evil-normal-state-map
-                ("C-c +" . evil-numbers/inc-at-pt)
-                ("C-c -" . evil-numbers/dec-at-pt)
-           :map evil-visual-state-map
-                ("C-c +" . evil-numbers/inc-at-pt)
-                ("C-c -" . evil-numbers/dec-at-pt)))
+      (use-package evil-numbers              ; increment / decrement number at point
+        :after evil
+        :bind (:map evil-normal-state-map
+                    ("C-c +" . evil-numbers/inc-at-pt)
+                    ("C-c -" . evil-numbers/dec-at-pt)
+               :map evil-visual-state-map
+                    ("C-c +" . evil-numbers/inc-at-pt)
+                    ("C-c -" . evil-numbers/dec-at-pt)))
+
+  (defun my/evil-shift-visual (dir)
+    "Shift the visual selection by DIR (1 = right, -1 = left) and keep it selected."
+    (funcall (if (> dir 0) #'evil-shift-right #'evil-shift-left)
+             (region-beginning) (region-end))
+    (evil-normal-state)
+    (evil-visual-restore))
+   
+  (defun my/evil-shift-right-visual () (interactive) (my/evil-shift-visual 1))
+  (defun my/evil-shift-left-visual  () (interactive) (my/evil-shift-visual -1))
+   
+  (with-eval-after-load 'evil
+    (define-key evil-visual-state-map ">" #'my/evil-shift-right-visual)
+    (define-key evil-visual-state-map "<" #'my/evil-shift-left-visual))
 #+END_SRC
 
 ** Leader key (SPC)
@@ -1253,63 +1098,64 @@ Reordering is off by default; toggle per buffer with =SPC t b=.
 :END:
 
 #+BEGIN_SRC emacs-lisp
-  (use-package org
-    :ensure nil
-    :hook (org-mode . org-indent-mode)
-    :custom
-    (org-startup-indented t)
-    (org-startup-with-inline-images t)
-    (org-ellipsis " ▾")
-    (org-hide-emphasis-markers t)
-    (org-pretty-entities t)
-    (org-list-allow-alphabetical t)
-    (org-html-validation-link nil)
-    (org-html-link-org-files-as-html t)
-    (org-fontify-quote-and-verse-blocks t)
-    (org-fontify-whole-heading-line t)
-    (org-src-fontify-natively t)
-    (org-src-tab-acts-natively t)
-    (org-startup-with-latex-preview nil)       ; Set to 't' if you want math rendered immediately on open
-    (org-preview-latex-default-process 'dvisvgm) ; Crisp, scalable SVG previews (no ugly white boxes)
-    (org-preview-latex-image-directory "/tmp/ltximg/")
-    (org-format-latex-options
-     '(:foreground default :background default
-       :scale 1.5 :html-foreground "Black" :html-background "Transparent"
-       :html-scale 1.5 :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))))
-#+END_SRC
-
+      (use-package org
+        :ensure nil
+        :hook (org-mode . variable-pitch-mode)   
+        :custom
+        (org-startup-indented t)
+        (org-startup-with-inline-images t)
+        (org-hide-emphasis-markers t)
+        (org-pretty-entities t)
+        (org-list-allow-alphabetical t)
+        (org-html-validation-link nil)
+        (org-html-link-org-files-as-html t)
+        (org-fontify-quote-and-verse-blocks t)
+        (org-fontify-whole-heading-line t)
+        (org-src-fontify-natively t)
+        (org-src-tab-acts-natively t)
+        (org-auto-align-tags nil)   
+        (org-startup-with-latex-preview nil)       ; Set to 't' if you want math rendered immediately on open
+        (org-preview-latex-default-process 'dvisvgm) ; Crisp, scalable SVG previews (no ugly white boxes)
+        (org-preview-latex-image-directory "/tmp/ltximg/")
+        (org-format-latex-options
+         '(:foreground default :background default
+           :scale 1.5 :html-foreground "Black" :html-background "Transparent"
+           :html-scale 1.5 :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))))
+  #+end_src
 ** Org Roam
 :PROPERTIES:
 :CUSTOM_ID: h-ba7986cb
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(use-package org-roam
-  :after org
-  :custom
-  (org-roam-directory (expand-file-name "notes" org-directory))
-  (org-roam-db-location (expand-file-name ".org-roam.db" user-emacs-directory))
-  (org-roam-completion-everywhere t)
-  (org-roam-capture-templates
-   '(("d" "default" plain "%?"
-      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
-      :unnarrowed t)))
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture)
-         ("C-c n g" . org-roam-graph))
-  :config
-  (org-roam-db-autosync-mode 1))
+  (use-package org-roam
+    :after org
+    :ensure t
+    :custom
+    (org-roam-directory (expand-file-name "notes" org-directory))
+    (org-roam-db-location (expand-file-name ".org-roam.db" user-emacs-directory))
+    (org-roam-completion-everywhere t)
+    (org-roam-capture-templates
+     '(("d" "default" plain "%?"
+        :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+        :unnarrowed t)))
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n i" . org-roam-node-insert)
+           ("C-c n c" . org-roam-capture)
+           ("C-c n g" . org-roam-graph))
+    :config
+    (org-roam-db-autosync-mode 1))
 
-(use-package org-roam-ui
-  :after org-roam
-  :commands org-roam-ui-mode
-  :custom
-  (org-roam-ui-sync-theme t)
-  (org-roam-ui-follow t)
-  (org-roam-ui-update-on-save t)
-  (org-roam-ui-open-on-start nil))
+  (use-package org-roam-ui
+    :ensure t
+    :after org-roam
+    :commands org-roam-ui-mode
+    :custom
+    (org-roam-ui-sync-theme t)
+    (org-roam-ui-follow t)
+    (org-roam-ui-update-on-save t)
+    (org-roam-ui-open-on-start nil))
 #+END_SRC
 
 ** Automatic CUSTOM_IDs
@@ -1385,6 +1231,7 @@ Exports of files inside =org-directory= land in =org-directory/export/= with the
 
   (use-package ox-tufte
     :after ox
+    :ensure t
     :config
     (defun my/org-html-embed-tufte-css ()
       "Embed tufte.css, ox-tufte.css and IBM Plex overrides in one <style> block."
@@ -1585,7 +1432,6 @@ does not leak into other projects.  =pyrefly= is used as the language server whe
       (add-to-list 'eglot-server-programs
                    `((python-mode python-ts-mode) . (,exe "lsp"))))))
 #+END_SRC
-
 
 ** Python
 :PROPERTIES:
@@ -1852,22 +1698,24 @@ Store the password with =pass insert irc/libera=.  The password is a function, s
 :END:
 
 #+BEGIN_SRC emacs-lisp
-(use-package elfeed
-  :ensure t
-  :commands (elfeed elfeed-update)
-  :custom
-  ;; Keep the database inside .emacs.d instead of cluttering ~/.elfeed
-  (elfeed-db-directory (expand-file-name "elfeed" user-emacs-directory)))
-
-(use-package elfeed-org
-  :ensure t
-  :demand t
-  :after elfeed
-  :custom
-  ;; Tell elfeed-org where your feeds file is
-  (rmh-elfeed-org-files (list (expand-file-name "elfeed.org" org-directory)))
-  :config
-  (elfeed-org))
+  (use-package elfeed
+    :ensure t
+    :commands (elfeed elfeed-update)
+    :custom
+    ;; Keep the database inside .emacs.d instead of cluttering ~/.elfeed
+    (elfeed-db-directory (expand-file-name "elfeed" user-emacs-directory))
+    :config
+    (setq elfeed-search-filter "@6-months-ago +unread"))
+  
+  (use-package elfeed-org
+    :ensure t
+    :demand t
+    :after elfeed
+    :custom
+    ;; Tell elfeed-org where your feeds file is
+    (rmh-elfeed-org-files (list (expand-file-name "elfeed.org" org-directory)))
+    :config
+    (elfeed-org))
 #+END_SRC
 
 * Maintenance
