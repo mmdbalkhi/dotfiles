@@ -266,8 +266,10 @@ bindsym XF86AudioPrev exec playerctl previous
 #
 # Clipboard manger
 #
-exec wl-paste -t text --watch clipman store --max-items=60 --histpath="~/.local/share/clipman.json"
-bindsym Mod4+Shift+v exec clipman pick --tool="wofi" --max-items=30 --histpath="~/.local/share/clipman.json"
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+
+bindsym Mod4+Shift+v exec cliphist list | wofi --dmenu --lines 15 | cliphist decode | wl-copy
 
 # colour picker
 #
@@ -330,44 +332,46 @@ for_window [title = "Firefox — Sharing Indicator"] kill
 for_window [urgent=latest] focus
 for_window [app_id="dunst"] opacity 0.9
 
-# === Tomorrow Night Palette ===
-set $background        #1d1f21
-set $foreground        #c5c8c6
-set $black             #1d1f21
-set $red               #cc6666
-set $green             #b5bd68
-set $yellow            #f0c674
-set $blue              #81a2be
-set $magenta           #b294bb
-set $cyan              #8abeb7
-set $white             #c5c8c6
-set $gray              #5f5f5f
-set $light_gray        #888888
+# === Goy Dark Palette ===
+set $bg-main    "#263335"
+set $bg-dim     "#202C2E"
+set $bg-alt     "#2E3D3E"
+set $bg-hl-line "#344647"
+set $bg-region  "#46605F"
+set $fg-main    "#E0E8E4"
+set $fg-dim     "#91A9A0"
+set $border     "#405958"
+set $cursor     "#70AAA7"
+set $red        "#D2837C"
+set $green      "#91B18C"
+set $yellow     "#C5A96F"
+set $blue       "#91AFCB"
+set $magenta    "#B8A0B6"
+set $cyan       "#75B7B0"
 
-# target                 title        bg     text         indicator   border
-client.focused          $light_gray $black   $white      $light_gray  $light_gray
-client.unfocused        $black      $black   $white       $black      $black
-client.focused_inactive $black      $black   $light_gray  $gray       $light_gray
-client.urgent           $black      $red     $white       $red        $red
-client.background       $background
+# target                 title        bg         text       indicator  border
+client.focused          $bg-alt      $bg-main   $fg-main   $cursor    $cursor
+client.focused_inactive $bg-dim      $bg-dim    $fg-dim    $border    $border
+client.unfocused        $bg-dim      $bg-dim    $fg-dim    $bg-dim    $bg-dim
+client.urgent           $bg-main     $red       $fg-main   $red       $red
+client.background       $bg-main
 
 bar {
   colors {
-    background         $black
-    statusline         $white
-    focused_statusline $white
-    focused_separator  $black
+    background         $bg-dim
+    statusline         $fg-main
+    focused_statusline $fg-main
+    focused_separator  $bg-main
 
-    # target           border  bg              text
-    focused_workspace  $black  $gray           $white
-    active_workspace   $black  $light_gray     $white
-    inactive_workspace $black  $black          $white
-    urgent_workspace   $red    $red            $white
+    # target           border       bg           text
+    focused_workspace  $cursor      $bg-alt      $fg-main
+    active_workspace   $border      $bg-hl-line  $fg-main
+    inactive_workspace $bg-dim      $bg-dim      $fg-dim
+    urgent_workspace   $red         $red         $fg-main
   }
-    position top
-    status_command i3status-rs $i3statusrs_config 
+  position top
+  status_command i3status-rs $i3statusrs_config 
 }
-
 #
 # border configs
 #

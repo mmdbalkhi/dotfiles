@@ -1,16 +1,16 @@
 [theme]
-theme = "ctp-mocha"
-[theme.overrides]
-idle_bg = "#1d1f21"
-idle_fg = "#c4c8c5"
-info_bg = "#363a41"
-info_fg = "#c4c8c5"
-good_bg = "#1d1f21"
-good_fg = "#c4c8c5"
-warning_bg = "#f0c574"
-warning_fg = "#1d1f21"
-critical_bg = "#cc6666"
-critical_fg = "#1e1e2e"
+theme = "plain"
+[theme.overrides]        # based on https://github.com/mmdbalkhi/persian-landscapes
+idle_bg = "#263335"      # bg-main
+idle_fg = "#E0E8E4"      # fg-main
+info_bg = "#2E3D3E"      # bg-alt
+info_fg = "#E0E8E4"      # fg-main
+good_bg = "#263335"      # bg-main
+good_fg = "#91B18C"      # green/success
+warning_bg = "#C5A96F"   # yellow/warning
+warning_fg = "#263335"   # bg-main (for contrast)
+critical_bg = "#D2837C"  # red/error
+critical_fg = "#263335"  # bg-main (for contrast)
 separator = "\ue0b2"
 separator_bg = "auto"
 separator_fg = "auto"

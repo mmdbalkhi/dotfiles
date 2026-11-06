@@ -16,8 +16,7 @@ hook global WinCreate ^[^*]+$ %{
     add-highlighter window/ show-whitespaces
 }
 
-source "~/.config/kak/colours/kanagawa-dragon.kak"
-# colorscheme tomorrow-night
+source "~/.config/kak/colours/goy-dark.kak"
 
 # Tab as space?
 # -------------------------
