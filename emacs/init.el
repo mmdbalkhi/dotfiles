@@ -762,7 +762,11 @@ LSP.  Previously this shut Eglot down for symlinks too, which is why
   ;; Route xref through consult so references get live preview.
   (setq xref-show-xrefs-function       #'consult-xref
         xref-show-definitions-function #'consult-xref))
-
+(use-package consult-dir
+  :bind (("C-x C-d" . consult-dir)
+         :map minibuffer-local-completion-map
+         ("C-x C-d" . consult-dir)
+         ("C-x C-j" . consult-dir-jump-file)))
 ;; Editable grep/occur buffers.  The command is `wgrep-change-to-wgrep-mode';
 ;; there is no command called `wgrep', so `:commands wgrep' never loaded it.
 (use-package wgrep
@@ -1233,11 +1237,6 @@ The result MUST end in a slash; returning a bare path is what caused
 (use-package avy
   :bind ("C-'" . avy-goto-char))
 
-;; Region expansion by semantic units.  C-= is expreg (see below); this is the
-;; classic fallback on M-=.
-(use-package expand-region
-  :bind ("M-=" . er/expand-region))
-
 ;; Structural (tree-sitter / syntax aware) region expansion.
 (use-package expreg
   :straight (:host github :repo "casouri/expreg")
@@ -1248,6 +1247,10 @@ The result MUST end in a slash; returning a bare path is what caused
               :map evil-visual-state-map
               ("v" . expreg-expand)
               ("V" . expreg-contract)))
+
+;; tells which func we are.
+(use-package breadcrumb
+  :hook (prog-mode . breadcrumb-local-mode))
 
 ;; Window jumping with labels.  Owns M-o.
 (use-package ace-window
@@ -1334,216 +1337,211 @@ The result MUST end in a slash; returning a bare path is what caused
 
 ;; [[file:readme.org::#h-misc-editing][Snippets, docs and misc commands:1]]
 ;; Eldoc in programming buffers, plus a childframe instead of the echo area.
-(use-package eldoc
-  :ensure nil :straight (:type built-in)
-  :hook (prog-mode . eldoc-mode))
+  (use-package eldoc
+    :ensure nil :straight (:type built-in)
+    :hook (prog-mode . eldoc-mode))
 
-(use-package eldoc-box
-  :after eldoc
-  :hook (eldoc-mode . eldoc-box-hover-mode))
+  (use-package eldoc-box
+    :after eldoc
+    :hook (eldoc-mode . eldoc-box-hover-mode))
 
-;; Snippets.  Note: yasnippet and tempel overlap; see the Suggestions section.
-(use-package yasnippet
-  :hook (prog-mode . yas-minor-mode)
-  :config (yas-reload-all))
+  (setq eldoc-echo-area-use-multiline-p nil)
+  (setq eldoc-idle-delay 1.5)
 
-(use-package yasnippet-snippets
-  :after yasnippet)
+  (with-eval-after-load 'eldoc-box
+   (remove-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode)
+   (remove-hook 'eglot-managed-mode-hook #'eldoc-box-hover-at-point-mode)) 
+  (setq eglot-send-changes-idle-time 1.0)
 
-(use-package tempel
+ (use-package tempel
   :commands (tempel-insert tempel-complete))
 
 ;; Colourise #rrggbb and rgb(...) literals.
 (use-package rainbow-mode
-  :hook (prog-mode . rainbow-mode))
-
-;; Show the enclosing function in the mode line — but only where imenu is
-;; cheap.  Globally it re-parses every buffer, including huge Org files.
-(setq which-func-modes '(prog-mode))
-(add-hook 'prog-mode-hook #'which-function-mode)
+:hook (prog-mode . rainbow-mode))
 
 ;; Outline navigation in programming buffers.
 (use-package outline
-  :ensure nil :straight (:type built-in)
-  :hook (prog-mode . outline-minor-mode))
+:ensure nil :straight (:type built-in)
+:hook (prog-mode . outline-minor-mode))
 
 ;; Assorted interactive commands.  M-o is ace-window, so smart-open-line
 ;; moved to C-c O.
 (use-package crux
-  :bind (("C-c o" . crux-open-with)
-         ("C-c O" . crux-smart-open-line)
-         ("C-c u" . crux-cleanup-buffer-or-region)
-         ("C-c f" . crux-recentf-find-file)
-         ("C-c w" . crux-swap-windows)
-         ("C-c D" . crux-delete-file-and-buffer)
-         ("C-c r" . crux-rename-buffer-and-file)
-         ("s-r"   . crux-recentf-find-file)
-         ("s-k"   . crux-kill-whole-line)))
+:bind (("C-c o" . crux-open-with)
+        ("C-c O" . crux-smart-open-line)
+        ("C-c u" . crux-cleanup-buffer-or-region)
+        ("C-c f" . crux-recentf-find-file)
+        ("C-c w" . crux-swap-windows)
+        ("C-c D" . crux-delete-file-and-buffer)
+        ("C-c r" . crux-rename-buffer-and-file)
+        ("s-r"   . crux-recentf-find-file)
+        ("s-k"   . crux-kill-whole-line)))
 ;; Snippets, docs and misc commands:1 ends here
 
 ;; [[file:readme.org::#h-2595f812][BIDI:1]]
 ;; Keep the bidirectional parenthesis algorithm off: it is the expensive part
 ;; and is rarely needed for prose.
 (setq-default bidi-display-reordering t
-              bidi-inhibit-bpa t
-              bidi-paragraph-direction 'left-to-right)
+            bidi-inhibit-bpa t
+            bidi-paragraph-direction 'left-to-right)
 
 (defun my/toggle-bidi-direction ()
-  "Toggle BIDI reordering and paragraph direction in this buffer."
-  (interactive)
-  (setq-local bidi-display-reordering (not bidi-display-reordering))
-  (setq-local bidi-paragraph-direction
-              (if (eq bidi-paragraph-direction 'left-to-right)
-                  'right-to-left
-                'left-to-right))
-  (message "BIDI reordering: %s | paragraph direction: %s"
-           (if bidi-display-reordering "ON" "OFF")
-           bidi-paragraph-direction)
-  (force-mode-line-update)
-  (redraw-display))
+"Toggle BIDI reordering and paragraph direction in this buffer."
+(interactive)
+(setq-local bidi-display-reordering (not bidi-display-reordering))
+(setq-local bidi-paragraph-direction
+            (if (eq bidi-paragraph-direction 'left-to-right)
+                'right-to-left
+            'left-to-right))
+(message "BIDI reordering: %s | paragraph direction: %s"
+        (if bidi-display-reordering "ON" "OFF")
+        bidi-paragraph-direction)
+(force-mode-line-update)
+(redraw-display))
 ;; BIDI:1 ends here
 
 ;; [[file:readme.org::#h-c7a5c469][Zen mode:1]]
 (use-package olivetti
-  :commands olivetti-mode
-  :custom
-  (olivetti-body-width 84)
-  (olivetti-minimum-body-width 40)
-  (olivetti-recall-visual-line-mode-entry-state t)
-  :config
-  (defun my/zen-enable ()
-    "Hide visual noise while Olivetti is on."
-    (display-line-numbers-mode -1)
-    (display-fill-column-indicator-mode -1)
-    (setq-local indicate-empty-lines nil
-                indicate-buffer-boundaries nil))
+:commands olivetti-mode
+:custom
+(olivetti-body-width 84)
+(olivetti-minimum-body-width 40)
+(olivetti-recall-visual-line-mode-entry-state t)
+:config
+(defun my/zen-enable ()
+"Hide visual noise while Olivetti is on."
+(display-line-numbers-mode -1)
+(display-fill-column-indicator-mode -1)
+(setq-local indicate-empty-lines nil
+            indicate-buffer-boundaries nil))
 
-  (defun my/zen-disable ()
-    "Restore programming-buffer decoration when Olivetti turns off."
-    (when (derived-mode-p 'prog-mode)
-      (display-line-numbers-mode 1)
-      (display-fill-column-indicator-mode 1)))
+(defun my/zen-disable ()
+"Restore programming-buffer decoration when Olivetti turns off."
+(when (derived-mode-p 'prog-mode)
+    (display-line-numbers-mode 1)
+    (display-fill-column-indicator-mode 1)))
 
-  (add-hook 'olivetti-mode-on-hook  #'my/zen-enable)
-  (add-hook 'olivetti-mode-off-hook #'my/zen-disable))
+(add-hook 'olivetti-mode-on-hook  #'my/zen-enable)
+(add-hook 'olivetti-mode-off-hook #'my/zen-disable))
 
 (defun my/toggle-zen-mode ()
-  "Toggle Olivetti (distraction-free) mode."
-  (interactive)
-  (require 'olivetti)
-  (olivetti-mode 'toggle))
+"Toggle Olivetti (distraction-free) mode."
+(interactive)
+(require 'olivetti)
+(olivetti-mode 'toggle))
 ;; Zen mode:1 ends here
 
 ;; [[file:readme.org::#h-29f35118][Core:1]]
 (use-package org
-  :ensure nil :straight (:type built-in)
-  :defer t
-  :commands (org-mode org-agenda org-capture org-store-link org-version)
-  :mode ("\\.org\\'" . org-mode)
-  :hook (org-mode . variable-pitch-mode)
-  :custom
-  (org-startup-indented t)
-  (org-startup-with-inline-images t)
-  (org-hide-emphasis-markers t)
-  (org-pretty-entities t)
-  (org-list-allow-alphabetical t)
-  (org-html-validation-link nil)
-  (org-html-link-org-files-as-html t)
-  (org-fontify-quote-and-verse-blocks t)
-  (org-fontify-whole-heading-line t)
-  (org-src-fontify-natively t)
-  (org-src-tab-acts-natively t)
-  (org-auto-align-tags nil)
-  (org-startup-with-latex-preview nil)
-  (org-preview-latex-default-process 'dvisvgm)   ; crisp SVG previews
-  (org-format-latex-options
-   '(:foreground default :background default :scale 1.5
-     :html-foreground "Black" :html-background "Transparent"
-     :html-scale 1.5 :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))))
+:ensure nil :straight (:type built-in)
+:defer t
+:commands (org-mode org-agenda org-capture org-store-link org-version)
+:mode ("\\.org\\'" . org-mode)
+:hook (org-mode . variable-pitch-mode)
+:custom
+(org-startup-indented t)
+(org-startup-with-inline-images t)
+(org-hide-emphasis-markers t)
+(org-pretty-entities t)
+(org-list-allow-alphabetical t)
+(org-html-validation-link nil)
+(org-html-link-org-files-as-html t)
+(org-fontify-quote-and-verse-blocks t)
+(org-fontify-whole-heading-line t)
+(org-src-fontify-natively t)
+(org-src-tab-acts-natively t)
+(org-auto-align-tags nil)
+(org-startup-with-latex-preview nil)
+(org-preview-latex-default-process 'dvisvgm)   ; crisp SVG previews
+(org-format-latex-options
+'(:foreground default :background default :scale 1.5
+    :html-foreground "Black" :html-background "Transparent"
+    :html-scale 1.5 :matchers ("begin" "$1" "$" "$$" "\\(" "\\["))))
 ;; Core:1 ends here
 
 ;; [[file:readme.org::#h-ba7986cb][Org Roam:1]]
 (use-package org-roam
-  :after org
-  :custom
-  (org-roam-directory (expand-file-name "notes/" org-directory))
-  (org-roam-db-location (expand-file-name ".org-roam.db" user-emacs-directory))
-  (org-roam-completion-everywhere t)
-  (org-roam-capture-templates
-   '(("d" "default" plain "%?"
-      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
-      :unnarrowed t)))
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture)
-         ("C-c n g" . org-roam-graph))
-  :config (org-roam-db-autosync-mode 1))
+:after org
+:custom
+(org-roam-directory (expand-file-name "notes/" org-directory))
+(org-roam-db-location (expand-file-name ".org-roam.db" user-emacs-directory))
+(org-roam-completion-everywhere t)
+(org-roam-capture-templates
+'(("d" "default" plain "%?"
+    :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+    :unnarrowed t)))
+:bind (("C-c n l" . org-roam-buffer-toggle)
+        ("C-c n f" . org-roam-node-find)
+        ("C-c n i" . org-roam-node-insert)
+        ("C-c n c" . org-roam-capture)
+        ("C-c n g" . org-roam-graph))
+:config (org-roam-db-autosync-mode 1))
 
 (use-package org-roam-ui
-  :after org-roam
-  :commands org-roam-ui-mode
-  :custom
-  (org-roam-ui-sync-theme t)
-  (org-roam-ui-follow t)
-  (org-roam-ui-update-on-save t)
-  (org-roam-ui-open-on-start nil))
+:after org-roam
+:commands org-roam-ui-mode
+:custom
+(org-roam-ui-sync-theme t)
+(org-roam-ui-follow t)
+(org-roam-ui-update-on-save t)
+(org-roam-ui-open-on-start nil))
 ;; Org Roam:1 ends here
 
 ;; [[file:readme.org::#h-b50b64bd][Automatic CUSTOM_IDs:1]]
 (with-eval-after-load 'org
-  (require 'org-id)
-  (setq org-id-locations-file
-        (expand-file-name ".org-id-locations" user-emacs-directory)
-        org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+(require 'org-id)
+(setq org-id-locations-file
+    (expand-file-name ".org-id-locations" user-emacs-directory)
+    org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
 
-  (defun my/org-custom-id-get (&optional pom create)
-    "Return the CUSTOM_ID at POM, creating an `h-xxxxxxxx' one when CREATE."
-    (org-with-point-at pom
-      (or (org-entry-get nil "CUSTOM_ID")
-          (when create
-            (let ((id (concat "h-" (substring (md5 (org-id-new)) 0 8))))
-              (org-entry-put nil "CUSTOM_ID" id)
-              id)))))
+(defun my/org-custom-id-get (&optional pom create)
+"Return the CUSTOM_ID at POM, creating an `h-xxxxxxxx' one when CREATE."
+(org-with-point-at pom
+    (or (org-entry-get nil "CUSTOM_ID")
+        (when create
+        (let ((id (concat "h-" (substring (md5 (org-id-new)) 0 8))))
+            (org-entry-put nil "CUSTOM_ID" id)
+            id)))))
 
-  (defun my/org-add-ids-to-headlines ()
-    "Add CUSTOM_IDs to all headlines when the file sets `auto-id:t'."
-    (when (derived-mode-p 'org-mode)
-      (save-excursion
-        (save-restriction
-          (widen)
-          (goto-char (point-min))
-          (when (re-search-forward "^#\\+OPTIONS:.*auto-id:t" nil t)
-            (org-map-entries (lambda () (my/org-custom-id-get (point) t))))))))
+(defun my/org-add-ids-to-headlines ()
+"Add CUSTOM_IDs to all headlines when the file sets `auto-id:t'."
+(when (derived-mode-p 'org-mode)
+    (save-excursion
+    (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (when (re-search-forward "^#\\+OPTIONS:.*auto-id:t" nil t)
+        (org-map-entries (lambda () (my/org-custom-id-get (point) t))))))))
 
-  (add-hook 'org-mode-hook
-            (lambda ()
-              (add-hook 'before-save-hook #'my/org-add-ids-to-headlines nil t)))
+(add-hook 'org-mode-hook
+        (lambda ()
+            (add-hook 'before-save-hook #'my/org-add-ids-to-headlines nil t)))
 
-  (add-hook 'org-capture-before-finalize-hook
-            (lambda ()
-              (when (org-at-heading-p)
-                (my/org-custom-id-get (point) t)))))
+(add-hook 'org-capture-before-finalize-hook
+        (lambda ()
+            (when (org-at-heading-p)
+            (my/org-custom-id-get (point) t)))))
 ;; Automatic CUSTOM_IDs:1 ends here
 
 ;; [[file:readme.org::#h-d8ec6da9][HTML export with Tufte CSS:1]]
 (defun my/org-export-to-export-dir (orig-fun extension &optional subtreep pub-dir)
-  "Mirror the Org source tree under `org-directory'/export/."
-  (let* ((org-root    (my/normalise-dir org-directory))
-         (export-root (expand-file-name "export/" org-root))
-         (file        (buffer-file-name (buffer-base-buffer)))
-         (rel         (and file
-                           (string-prefix-p org-root (expand-file-name file))
-                           (file-relative-name (expand-file-name file) org-root)))
-         (pub-dir     (or pub-dir
-                          (and rel
-                               (expand-file-name (or (file-name-directory rel) "")
-                                                 export-root)))))
-    (when pub-dir (make-directory pub-dir t))
-    (funcall orig-fun extension subtreep pub-dir)))
+"Mirror the Org source tree under `org-directory'/export/."
+(let* ((org-root    (my/normalise-dir org-directory))
+        (export-root (expand-file-name "export/" org-root))
+        (file        (buffer-file-name (buffer-base-buffer)))
+        (rel         (and file
+                        (string-prefix-p org-root (expand-file-name file))
+                        (file-relative-name (expand-file-name file) org-root)))
+        (pub-dir     (or pub-dir
+                        (and rel
+                            (expand-file-name (or (file-name-directory rel) "")
+                                                export-root)))))
+(when pub-dir (make-directory pub-dir t))
+(funcall orig-fun extension subtreep pub-dir)))
 
 (with-eval-after-load 'ox
-  (advice-add 'org-export-output-file-name :around #'my/org-export-to-export-dir))
+(advice-add 'org-export-output-file-name :around #'my/org-export-to-export-dir))
 
 ;; ── Syntax highlighting for HTML export ────────────────────────────────────
 ;; `ox-html' fontifies src blocks by running font-lock in a temp buffer and
@@ -1553,118 +1551,118 @@ The result MUST end in a slash; returning a bare path is what caused
 ;;   "Cannot fontify source block (htmlize.el >= 1.34 required)"
 ;; once PER SOURCE BLOCK and falls back to plain text.
 (use-package htmlize
-  :defer t
-  :commands (htmlize-buffer htmlize-region htmlize-file))
+:defer t
+:commands (htmlize-buffer htmlize-region htmlize-file))
 
 (with-eval-after-load 'ox-html
-  ;; `inline-css' bakes colours into style="..." attributes: the export is
-  ;; self-contained, no extra stylesheet needed.  This is already the default;
-  ;; set it explicitly so the choice is documented.
-  (setq org-html-htmlize-output-type 'inline-css)
-  ;; Class-name prefix used when `org-html-htmlize-output-type' is `css'.
-  (setq org-html-htmlize-font-prefix "org-"))
+;; `inline-css' bakes colours into style="..." attributes: the export is
+;; self-contained, no extra stylesheet needed.  This is already the default;
+;; set it explicitly so the choice is documented.
+(setq org-html-htmlize-output-type 'inline-css)
+;; Class-name prefix used when `org-html-htmlize-output-type' is `css'.
+(setq org-html-htmlize-font-prefix "org-"))
 
 (use-package ox-tufte
-  :after ox
-  :config
-  (defun my/org-html-embed-tufte-css ()
-    "Read tufte.css + ox-tufte.css from disk and wrap them in a <style> block."
-    (let* ((css-dir (expand-file-name "static/css/" org-directory))
-           (tufte   (expand-file-name "tufte.css" css-dir))
-           (ox      (expand-file-name "ox-tufte.css" css-dir)))
-      (concat
-       "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Mono\" rel=\"stylesheet\">\n"
-       "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Sans\" rel=\"stylesheet\">\n"
-       "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Serif\" rel=\"stylesheet\">\n"
-       "<style type=\"text/css\">\n"
-       (if (file-readable-p tufte)
-           (with-temp-buffer (insert-file-contents tufte) (buffer-string))
-         "/* WARNING: tufte.css not found */\n")
-       "\n/* ===== ox-tufte.css ===== */\n"
-       (if (file-readable-p ox)
-           (with-temp-buffer (insert-file-contents ox) (buffer-string))
-         "/* WARNING: ox-tufte.css not found */\n")
-       "\n/* ===== IBM Plex overrides ===== */\n"
-       "body, article { font-family: \"IBM Plex Serif\", et-book, Georgia, serif !important;"
-       " background-color: #fffff8; color: #111; }\n"
-       "h1, h2, h3, h4, h5, .sans { font-family: \"IBM Plex Sans\", system-ui, sans-serif !important;"
-       " font-weight: 500; }\n"
-       "code, pre, .org-src-container pre { font-family: \"IBM Plex Mono\", ui-monospace, monospace !important; }\n"
-       ".sidenote, .marginnote { font-family: \"IBM Plex Serif\", Georgia, serif; }\n"
-       "mjx-container, .MathJax, .katex { margin: 0.6em 0; overflow-x: auto;"
-       " overflow-y: hidden; max-width: 100%; }\n"
-       ".org-latex-preview { max-width: 100%; height: auto; }\n"
-       "</style>")))
+:after ox
+:config
+(defun my/org-html-embed-tufte-css ()
+"Read tufte.css + ox-tufte.css from disk and wrap them in a <style> block."
+(let* ((css-dir (expand-file-name "static/css/" org-directory))
+        (tufte   (expand-file-name "tufte.css" css-dir))
+        (ox      (expand-file-name "ox-tufte.css" css-dir)))
+    (concat
+    "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Mono\" rel=\"stylesheet\">\n"
+    "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Sans\" rel=\"stylesheet\">\n"
+    "<link href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Serif\" rel=\"stylesheet\">\n"
+    "<style type=\"text/css\">\n"
+    (if (file-readable-p tufte)
+        (with-temp-buffer (insert-file-contents tufte) (buffer-string))
+        "/* WARNING: tufte.css not found */\n")
+    "\n/* ===== ox-tufte.css ===== */\n"
+    (if (file-readable-p ox)
+        (with-temp-buffer (insert-file-contents ox) (buffer-string))
+        "/* WARNING: ox-tufte.css not found */\n")
+    "\n/* ===== IBM Plex overrides ===== */\n"
+    "body, article { font-family: \"IBM Plex Serif\", et-book, Georgia, serif !important;"
+    " background-color: #fffff8; color: #111; }\n"
+    "h1, h2, h3, h4, h5, .sans { font-family: \"IBM Plex Sans\", system-ui, sans-serif !important;"
+    " font-weight: 500; }\n"
+    "code, pre, .org-src-container pre { font-family: \"IBM Plex Mono\", ui-monospace, monospace !important; }\n"
+    ".sidenote, .marginnote { font-family: \"IBM Plex Serif\", Georgia, serif; }\n"
+    "mjx-container, .MathJax, .katex { margin: 0.6em 0; overflow-x: auto;"
+    " overflow-y: hidden; max-width: 100%; }\n"
+    ".org-latex-preview { max-width: 100%; height: auto; }\n"
+    "</style>")))
 
-  (setq org-html-head-include-default-style nil)
+(setq org-html-head-include-default-style nil)
 
-  ;; Compute the head at export time, not at load time.
-  (defun my/org-html-head-refresh (&rest _)
-    "Rebuild `org-html-head' from the CSS files on disk."
-    (setq org-html-head (my/org-html-embed-tufte-css)))
-  (advice-add 'org-html-export-to-html :before #'my/org-html-head-refresh)
-  (advice-add 'org-html-export-as-html :before #'my/org-html-head-refresh))
+;; Compute the head at export time, not at load time.
+(defun my/org-html-head-refresh (&rest _)
+"Rebuild `org-html-head' from the CSS files on disk."
+(setq org-html-head (my/org-html-embed-tufte-css)))
+(advice-add 'org-html-export-to-html :before #'my/org-html-head-refresh)
+(advice-add 'org-html-export-as-html :before #'my/org-html-head-refresh))
 ;; HTML export with Tufte CSS:1 ends here
 
 ;; [[file:readme.org::#h-3a8f9c21][LaTeX export:1]]
 (use-package ox-latex
-  :ensure nil :straight (:type built-in)
-  :after org
-  :custom
-  ;; -shell-escape is REQUIRED by minted.  latexmk handles the multiple passes,
-  ;; bibtex/biber and glossaries automatically.
-  (org-latex-pdf-process
-   '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
-  (org-latex-listings 'minted)          ; needs python-pygments on PATH
-  (org-latex-minted-options
-   '(("frame" "lines") ("fontsize" "\\footnotesize")
-     ("breaklines" "true") ("linenos" "true")))
-  ;; NOTE: inputenc/fontenc are pdflatex-only.  The third element of each entry
-  ;; is SNIPPET-P, not "pdflatex only"; the compiler list is the fourth.
-  (org-latex-packages-alist
-   '(("AUTO" "inputenc"  t ("pdflatex"))
-     ("T1"   "fontenc"   t ("pdflatex"))
-     (""     "amsmath"   t)
-     (""     "amssymb"   t)
-     (""     "mathtools" t)
-     (""     "mathrsfs"  t)
-     (""     "braket"    t)
-     (""     "csquotes"  t)
-     (""     "microtype" t))))
+:ensure nil :straight (:type built-in)
+:after org
+:custom
+;; -shell-escape is REQUIRED by minted.  latexmk handles the multiple passes,
+;; bibtex/biber and glossaries automatically.
+(org-latex-pdf-process
+'("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
+(org-latex-listings 'minted)          ; needs python-pygments on PATH
+(org-latex-minted-options
+'(("frame" "lines") ("fontsize" "\\footnotesize")
+    ("breaklines" "true") ("linenos" "true")))
+;; NOTE: inputenc/fontenc are pdflatex-only.  The third element of each entry
+;; is SNIPPET-P, not "pdflatex only"; the compiler list is the fourth.
+(org-latex-packages-alist
+'(("AUTO" "inputenc"  t ("pdflatex"))
+    ("T1"   "fontenc"   t ("pdflatex"))
+    (""     "amsmath"   t)
+    (""     "amssymb"   t)
+    (""     "mathtools" t)
+    (""     "mathrsfs"  t)
+    (""     "braket"    t)
+    (""     "csquotes"  t)
+    (""     "microtype" t))))
 ;; LaTeX export:1 ends here
 
 ;; [[file:readme.org::#h-treesit][Tree-sitter:1]]
 ;; Emacs 31: switch every mode that has a tree-sitter variant to it.
 (when (boundp 'treesit-enabled-modes)
-  (setq treesit-enabled-modes t))
+(setq treesit-enabled-modes t))
 
 ;; Emacs 31: ask before downloading/building a missing grammar.
 ;; (`treesit-auto-install' is the older, now obsolete name.)
 (cond ((boundp 'treesit-auto-install-grammar)
-       (setq treesit-auto-install-grammar 'ask))
-      ((boundp 'treesit-auto-install)
-       (setq treesit-auto-install 'ask)))
+    (setq treesit-auto-install-grammar 'ask))
+    ((boundp 'treesit-auto-install)
+    (setq treesit-auto-install 'ask)))
 ;; Tree-sitter:1 ends here
 
 ;; [[file:readme.org::#h-eglot][Eglot (LSP):1]]
 (use-package eglot
-  :ensure nil :straight (:type built-in)
-  :hook (((python-base-mode
-           c-mode c-ts-mode c++-mode c++-ts-mode
-           go-mode go-ts-mode
-           rustic-mode rust-ts-mode
-           js-mode js-ts-mode typescript-ts-mode tsx-ts-mode
-           clojure-mode elixir-mode erlang-mode elm-mode
-           LaTeX-mode typst-ts-mode)
-          . eglot-ensure))
-  :custom
-  ;; Shut the server down when the last managed buffer is killed.
-  (eglot-autoshutdown t)
-  ;; Do not log every JSONRPC event: chatty servers make this expensive.
-  ;; Set :size back to nil temporarily when debugging a session.
-  (eglot-events-buffer-config '(:size 0 :format full))
-  :config
-  ;; Eglot renders diagnostics through Flymake by default.  Flycheck's bridge
+:ensure nil :straight (:type built-in)
+:hook (((python-base-mode
+        c-mode c-ts-mode c++-mode c++-ts-mode
+        go-mode go-ts-mode
+        rustic-mode rust-ts-mode
+        js-mode js-ts-mode typescript-ts-mode tsx-ts-mode
+        clojure-mode elixir-mode erlang-mode elm-mode
+        LaTeX-mode typst-ts-mode)
+        . eglot-ensure))
+:custom
+;; Shut the server down when the last managed buffer is killed.
+(eglot-autoshutdown t)
+;; Do not log every JSONRPC event: chatty servers make this expensive.
+;; Set :size back to nil temporarily when debugging a session.
+(eglot-events-buffer-config '(:size 0 :format full))
+:config
+;; Eglot renders diagnostics through Flymake by default.  Flycheck's bridge
   ;; (below) turns Flymake off per buffer and takes over.  If you ever want
   ;; Eglot to keep Flymake and let Flycheck run only its own checkers, add
   ;; `flymake' here — but do NOT do that while `flycheck-eglot-mode' is on,
@@ -1731,14 +1729,16 @@ The result MUST end in a slash; returning a bare path is what caused
 ;; Formatting:1 ends here
 
 ;; [[file:readme.org::#h-prose][Prose checking:1]]
-(use-package flyspell
-  :ensure nil :straight (:type built-in)
-  :hook ((text-mode . flyspell-mode)
-         (prog-mode . flyspell-prog-mode)))   ; comments and strings only
+(use-package jinx
+  :hook (emacs-startup . global-jinx-mode)
+  :bind (("M-$" . jinx-correct)
+         ("C-M-$" . jinx-languages))
+  :config
+  (setq jinx-languages "en_GB fa_IR"))
 
-(use-package langtool
-  :commands (langtool-check langtool-check-buffer)
-  :custom (langtool-default-language "en-US"))
+  (use-package langtool
+    :commands (langtool-check langtool-check-buffer)
+    :custom (langtool-default-language "en-GB"))
 ;; Prose checking:1 ends here
 
 ;; [[file:readme.org::#h-72850ea5][Python:1]]
@@ -1861,7 +1861,10 @@ The result MUST end in a slash; returning a bare path is what caused
                          (derived-mode-p 'neocaml-base-mode)
                          (fboundp 'flycheck-eglot-mode))
                 (flycheck-eglot-mode 1)))))
-
+  (with-eval-after-load 'flycheck
+      (setq flycheck-check-syntax-automatically '(save idle-change mode-enabled))
+      (setq flycheck-idle-change-delay 2.0))
+  
 (use-package opam-switch-mode
   :hook (neocaml-base-mode . opam-switch-mode))
 
