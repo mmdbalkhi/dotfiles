@@ -1814,6 +1814,33 @@ The result MUST end in a slash; returning a bare path is what caused
 (use-package erlang      :mode "\\.erl\\'")
 (use-package elm-mode    :mode "\\.elm\\'")
 
+;; ── Common Lisp ────────────────────────────────────────────────────────────
+;; Sly is the modern, actively maintained fork of SLIME. It provides a REPL,
+;; debugger, inspector, and cross-referencing, making LSP largely redundant
+;; for Common Lisp development.
+(use-package sly
+  :mode ("\\.lisp\\'" . lisp-mode)
+  :custom
+  ;; Define your installed Common Lisp implementations here.
+  ;; SBCL (Steel Bank Common Lisp) is highly recommended as the primary.
+  (sly-lisp-implementations
+   '((sbcl ("sbcl") :coding-system utf-8-unix)
+     (ccl ("ccl") :coding-system utf-8-unix)))
+  (sly-net-coding-system 'utf-8-unix)
+  :bind (:map lisp-mode-map
+         ("C-c C-z" . sly)                      ; Start or switch to REPL
+         ("C-c C-k" . sly-compile-and-load-file) ; Compile and load current file
+         ("C-c C-c" . sly-compile-defun))       ; Compile current top-level form
+  :config
+  ;; Load useful Sly contribs for a richer IDE-like experience
+  (require 'sly-asp)      ; ASDF system integration (M-x sly-asdf-load-system)
+  (require 'sly-autodoc)  ; Minibuffer argument hints (like eldoc)
+  (require 'sly-mrepl))   ; Support for multiple, named REPL buffers
+
+(use-package paredit
+  :ensure t
+  :hook (lisp-mode . paredit-mode))
+
 ;; ── OCaml ──────────────────────────────────────────────────────────────────
 ;; neocaml registers its own auto-mode-alist entries AND sets the
 ;; `eglot-language-id' symbol property on its modes ("ocaml" for .ml,
